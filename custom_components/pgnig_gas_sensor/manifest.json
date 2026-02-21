@@ -1,0 +1,14 @@
+{
+  "domain": "pgnig_gas_sensor",
+  "name": "PGNIG gas Sensor",
+  "documentation": "https://github.com/pawelhulek/pgnig-sensor",
+  "issue_tracker": "https://github.com/pawelhulek/pgnig-sensor/issues",
+  "dependencies": [],
+  "config_flow": true,
+  "codeowners": [
+    "@pawelhulek"
+  ],
+  "requirements": [],
+  "iot_class": "cloud_polling",
+  "version": "2.3.0"
+}
