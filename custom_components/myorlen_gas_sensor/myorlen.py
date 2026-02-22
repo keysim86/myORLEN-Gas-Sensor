@@ -16,7 +16,7 @@ headers = {
 }
 
 
-class PgnigApi:
+class myORLENApi:
 
     def __init__(self, username, password) -> None:
         self.username = username

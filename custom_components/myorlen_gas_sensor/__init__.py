@@ -9,7 +9,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_PASSWORD): cv.string,
 })
 
-DOMAIN = "pgnig_gas_sensor"
+DOMAIN = "myorlen_gas_sensor"
 
 async def async_setup(hass, config):
     hass.data[DOMAIN] = {}

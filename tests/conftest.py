@@ -1,1 +1,1 @@
-"""Global fixtures for pgnig_sensor integration."""
+"""Global fixtures for myorlen_sensor integration."""

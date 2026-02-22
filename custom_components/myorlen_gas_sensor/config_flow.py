@@ -5,7 +5,8 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 
-from custom_components.pgnig_gas_sensor.PgnigApi import PgnigApi
+from custom_components.myorlen_gas_sensor.myorlen import myORLENApi
+from custom_components.myorlen_gas_sensor.myorlen import myORLENApiApi
 
 AUTH_SCHEMA = vol.Schema({
     vol.Required(CONF_USERNAME): cv.string,
@@ -13,7 +14,7 @@ AUTH_SCHEMA = vol.Schema({
 })
 
 
-class PGNIGGasConfigFlow(ConfigFlow, domain="pgnig_gas_sensor"):
+class myORLENGasConfigFlow(ConfigFlow, domain="myorlen_gas_sensor"):
     """Example config flow."""
 
     async def async_step_import(self, import_config):
@@ -23,10 +24,10 @@ class PGNIGGasConfigFlow(ConfigFlow, domain="pgnig_gas_sensor"):
         errors: Dict[str, str] = {}
         description_placeholders = {"error_info": ""}
         if user_input is not None:
-            api = PgnigApi(user_input[CONF_USERNAME], user_input[CONF_PASSWORD])
+            api = myORLENApi(user_input[CONF_USERNAME], user_input[CONF_PASSWORD])
             try:
                 await self.hass.async_add_executor_job(api.login)
-                return self.async_create_entry(title="Pgnig sensor", data=user_input)
+                return self.async_create_entry(title="myORLEN sensor", data=user_input)
             except Exception as e:
                 errors = {"login_failed": "verify_connection_failed"}
                 description_placeholders = {"error_info": "EBOK Login Failed"}

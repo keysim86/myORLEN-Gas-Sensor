@@ -1,1 +1,1 @@
-"""Tests for pgnig_sensor integration."""
+"""Tests for myorlen_sensor integration."""

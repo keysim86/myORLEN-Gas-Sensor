@@ -23,12 +23,12 @@ jobs:
       - name: Create zip
         run: |
           cd custom_components/myorlen_gas_sensor
-          zip pgnig_gas_sensor.zip -r ./
+          zip myorlen_gas_sensor.zip -r ./
       - name: Upload zip to release
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./custom_components/pgnig_gas_sensor/myorlen_gas_sensor.zip
+          file: ./custom_components/myorlen_gas_sensor/myorlen_gas_sensor.zip
           asset_name: myorlen_gas_sensor.zip
           tag: ${{ github.ref }}
           overwrite: true

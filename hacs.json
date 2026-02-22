@@ -1,5 +1,5 @@
 {
-  "name": "PGNIG sensor",
+  "name": "myORLEN Gas Sensor",
   "domains": ["sensor"],
   "country": "PL",
   "render_readme": true

@@ -1,4 +1,4 @@
-"""Pgnig sensor test pack."""
+"""myORLEN Gas Sensor test pack."""
 
 from datetime import datetime
 from unittest.mock import MagicMock
@@ -6,19 +6,19 @@ from unittest.mock import MagicMock
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.pgnig_gas_sensor.PpgReadingForMeter import (
+from custom_components.myorlen_gas_sensor.PpgReadingForMeter import (
     MeterReading,
     PpgReadingForMeter,
 )
-from custom_components.pgnig_gas_sensor.sensor import PgnigSensor, PgnigInvoiceSensor, PgnigCostTrackingSensor
-from custom_components.pgnig_gas_sensor.Invoices import Invoices, InvoicesList
+from custom_components.myorlen_gas_sensor.sensor import myORLENSensor, myORLENInvoiceSensor, myORLENCostTrackingSensor
+from custom_components.myorlen_gas_sensor.Invoices import Invoices, InvoicesList
 
 
 @pytest.mark.asyncio
 async def test_newer_takes_precedence(hass: HomeAssistant):
-    """Pgnig sensor test - test_newer_takes_precedence."""
+    """myORLEN sensor test - test_newer_takes_precedence."""
     # given
-    pgnig_api = MagicMock()
+    myorlen_api = MagicMock()
     reading_newer = any_meter_reading()
     reading_newer.reading_date_utc = datetime(2022, 7, 5)
     reading_newer.value = 2
@@ -26,12 +26,12 @@ async def test_newer_takes_precedence(hass: HomeAssistant):
     reading_older = any_meter_reading()
     reading_older.reading_date_utc = datetime(2022, 7, 4)
     reading_older.value = 3
-    pgnig_api.readingForMeter = MagicMock(return_value=(
+    myorlen_api.readingForMeter = MagicMock(return_value=(
         PpgReadingForMeter(meter_readings=[reading_older, reading_newer], code=0, message=None,
                            display_to_end_user=None,
                            token_expire_date=None,
                            token_expire_date_utc=None, end_user_message=None)))
-    sensor = PgnigSensor(hass, pgnig_api, "1", 2)
+    sensor = myORLENSensor(hass, myorlen_api, "1", 2)
     # when
     await sensor.async_update()
     # then
@@ -40,16 +40,16 @@ async def test_newer_takes_precedence(hass: HomeAssistant):
 
 @pytest.mark.asyncio
 async def test_multiple_invocies(hass: HomeAssistant):
-    """Pgnig sensor test - test_multiple_invocies."""
-    pgnig_api = MagicMock()
-    pgnig_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[any_invoice(), any_invoice()],
+    """myORLEN sensor test - test_multiple_invocies."""
+    myorlen_api = MagicMock()
+    myorlen_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[any_invoice(), any_invoice()],
                                                           code=0, message=None,
                                                           display_to_end_user=None,
                                                           token_expire_date=None, allow_load_after30_days=None,
                                                           allow_load_after30_days_filter=False,
                                                           has_non_paid_forecast=None,
                                                           token_expire_date_utc=None, end_user_message=None)))
-    sensor = PgnigInvoiceSensor(hass, pgnig_api, '12', 1)
+    sensor = myORLENInvoiceSensor(hass, myorlen_api, '12', 1)
     await sensor.async_update()
     # then
     assert sensor._state.get('nextPaymentAmountToPay') == 1
@@ -57,27 +57,27 @@ async def test_multiple_invocies(hass: HomeAssistant):
 
 @pytest.mark.asyncio
 async def test_a_price(hass: HomeAssistant):
-    """Pgnig sensor test - test_multiple_invocies."""
-    pgnig_api = MagicMock()
+    """myORLEN sensor test - test_multiple_invocies."""
+    myorlen_api = MagicMock()
     invoice = any_invoice()
     invoice.gross_amount = 10
     invoice.wear_m3 = 1
-    pgnig_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[invoice],
+    myorlen_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[invoice],
                                                           code=0, message=None,
                                                           display_to_end_user=None,
                                                           token_expire_date=None, allow_load_after30_days=None,
                                                           allow_load_after30_days_filter=False,
                                                           has_non_paid_forecast=None,
                                                           token_expire_date_utc=None, end_user_message=None)))
-    sensor = PgnigCostTrackingSensor(hass, pgnig_api, '12', 1)
+    sensor = myORLENCostTrackingSensor(hass, myorlen_api, '12', 1)
     await sensor.async_update()
     # then
     assert sensor.state == 10.0
 
 @pytest.mark.asyncio
 async def test_latest_price(hass: HomeAssistant):
-    """Pgnig sensor test - test_multiple_invocies."""
-    pgnig_api = MagicMock()
+    """myORLEN sensor test - test_latest_price."""
+    myorlen_api = MagicMock()
     old_invoice = any_invoice()
     old_invoice.date = datetime(2022, 7, 15)
     old_invoice.gross_amount = 1
@@ -88,21 +88,21 @@ async def test_latest_price(hass: HomeAssistant):
     new_invoice.gross_amount = 2
     new_invoice.wear_m3 = 1
 
-    pgnig_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[old_invoice, new_invoice],
+    myorlen_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[old_invoice, new_invoice],
                                                           code=0, message=None,
                                                           display_to_end_user=None,
                                                           token_expire_date=None, allow_load_after30_days=None,
                                                           allow_load_after30_days_filter=False,
                                                           has_non_paid_forecast=None,
                                                           token_expire_date_utc=None, end_user_message=None)))
-    sensor = PgnigCostTrackingSensor(hass, pgnig_api, '12', 1)
+    sensor = myORLENCostTrackingSensor(hass, myorlen_api, '12', 1)
     await sensor.async_update()
     # then
     assert sensor.state == 2.0
 @pytest.mark.asyncio
 async def test_non_zero_latest_price(hass: HomeAssistant):
-    """Pgnig sensor test - test_multiple_invocies."""
-    pgnig_api = MagicMock()
+    """myORLEN sensor test - test_multiple_invocies."""
+    myorlen_api = MagicMock()
     zero_invoice = any_invoice()
     zero_invoice.date = datetime(2022, 9, 15)
     zero_invoice.gross_amount = 1
@@ -118,14 +118,14 @@ async def test_non_zero_latest_price(hass: HomeAssistant):
     new_invoice.gross_amount = 2
     new_invoice.wear_m3 = 1
 
-    pgnig_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[zero_invoice, new_invoice],
+    myorlen_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[zero_invoice, new_invoice],
                                                           code=0, message=None,
                                                           display_to_end_user=None,
                                                           token_expire_date=None, allow_load_after30_days=None,
                                                           allow_load_after30_days_filter=False,
                                                           has_non_paid_forecast=None,
                                                           token_expire_date_utc=None, end_user_message=None)))
-    sensor = PgnigCostTrackingSensor(hass, pgnig_api, '12', 1)
+    sensor = myORLENCostTrackingSensor(hass, myorlen_api, '12', 1)
     await sensor.async_update()
     # then
     assert sensor.state == 2.0
@@ -133,19 +133,19 @@ async def test_non_zero_latest_price(hass: HomeAssistant):
 
 @pytest.mark.asyncio
 async def test_gross_amount_is_none(hass: HomeAssistant):
-    """Pgnig sensor test - test_multiple_invocies."""
-    pgnig_api = MagicMock()
+    """myORLEN sensor test - test_multiple_invocies."""
+    myorlen_api = MagicMock()
     invoice = any_invoice()
     invoice.gross_amount = None
     invoice.wear_m3 = 1
-    pgnig_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[invoice],
+    myorlen_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[invoice],
                                                           code=0, message=None,
                                                           display_to_end_user=None,
                                                           token_expire_date=None, allow_load_after30_days=None,
                                                           allow_load_after30_days_filter=False,
                                                           has_non_paid_forecast=None,
                                                           token_expire_date_utc=None, end_user_message=None)))
-    sensor = PgnigCostTrackingSensor(hass, pgnig_api, '12', 1)
+    sensor = myORLENCostTrackingSensor(hass, myorlen_api, '12', 1)
     await sensor.async_update()
     # then
     assert sensor.state is None
@@ -153,20 +153,20 @@ async def test_gross_amount_is_none(hass: HomeAssistant):
 
 @pytest.mark.asyncio
 async def test_wear_is_none(hass: HomeAssistant):
-    """Pgnig sensor test - test when gas consumption is zero (no valid consumption)."""
-    pgnig_api = MagicMock()
+    """myORLEN sensor test - test when gas consumption is zero (no valid consumption)."""
+    myorlen_api = MagicMock()
     invoice = any_invoice()
     invoice.gross_amount = 1
     invoice.wear_m3 = 0
     invoice.wear = 0
-    pgnig_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[invoice],
+    myorlen_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[invoice],
                                                           code=0, message=None,
                                                           display_to_end_user=None,
                                                           token_expire_date=None, allow_load_after30_days=None,
                                                           allow_load_after30_days_filter=False,
                                                           has_non_paid_forecast=None,
                                                           token_expire_date_utc=None, end_user_message=None)))
-    sensor = PgnigCostTrackingSensor(hass, pgnig_api, '12', 1)
+    sensor = myORLENCostTrackingSensor(hass, myorlen_api, '12', 1)
     await sensor.async_update()
     # then
     assert sensor.state is None

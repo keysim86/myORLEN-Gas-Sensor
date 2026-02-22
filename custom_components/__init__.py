@@ -1,1 +1,1 @@
-"""Pgnig sensor"""
+"""myORLEN Gas Sensor"""

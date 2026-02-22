@@ -1,6 +1,6 @@
-# PGNIG Sensor 
+# myORLEN Sensor 
 
-This sensor is gathering gas usage data for PGNIG clients.
+This sensor is gathering gas usage data for myORLEN clients.
 
 It uses API from https://ebok.myorlen.pl/
 
@@ -9,7 +9,7 @@ Sample configuration
 
 ```yaml
 sensor:
-  - platform: pgnig_gas_sensor
+  - platform: myorlen_gas_sensor
     username: YOUR USERNAME
     password: YOUR PASSWORD
 ```
@@ -17,12 +17,12 @@ It is recommended to confiure the sensor through the UI.
 
 ## Through the interface
 1) Navigate to Settings > Devices & Services and then click Add Integration
-2) Search for PGNIG gas sensor
+2) Search for myORLEN gas sensor
 3) Enter your credentials (e-mail and password)
 
 ## Technical Details
 
-The sensor uses API from https://ebok.pgnig.pl 
+The sensor uses API from https://ebok.myorlen.pl 
 and is particularly focused on the last reading endpoint. 
 
 The data is refreshed every 8 hours or on the sensor startup.
@@ -59,7 +59,7 @@ $ pytest
 ```
 
 # Legal notice
-This is a personal project and isn't in any way affiliated with, sponsored or endorsed by POLSKIE GÓRNICTWO NAFTOWE I GAZOWNICTWO S A (PGNIG).
+This is a personal project and isn't in any way affiliated with, sponsored or endorsed by myORLEN.
 
 All product names, trademarks and registered trademarks in (the images in) this repository, are property of their respective owners. All images in this repository are used by the project for identification purposes only.
 
@@ -67,4 +67,4 @@ The data source for this integration is https://ebok.myorlen.pl/
 
 The author of this project categorically rejects any and all responsibility for the data that were presented by the integration.
 
-Anything else? Post a [question.](https://github.com/pawelhulek/pgnig-sensor/issues/new)
+Anything else? Post a [question.](https://github.com/keysim86/myOrlen-sensor/issues/new)
