@@ -11,8 +11,12 @@ on:
 
 jobs:
   update_release_draft:
+    permissions:
       contents: write
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-    S-v
+      - uses: https://github.com/release-drafter/release-drafter@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_API_URL: ${{ github.api_url }}
