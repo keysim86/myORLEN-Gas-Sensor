@@ -15,9 +15,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 
-from .Invoices import InvoicesList
-from .myORLENApi import myORLENApi
-from .PpgReadingForMeter import MeterReading
+from .invoices import InvoicesList
+from .myorlen_api import myORLENApi
+from .ppg_reading_for_meter import MeterReading
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
