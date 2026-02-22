@@ -17,7 +17,6 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .Invoices import InvoicesList
 from .myORLENApi import myORLENApi
-from .myorlen import myORLENApi
 from .PpgReadingForMeter import MeterReading
 
 _LOGGER = logging.getLogger(__name__)
