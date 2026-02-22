@@ -6,12 +6,12 @@ from unittest.mock import MagicMock
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.myorlen_gas_sensor.PpgReadingForMeter import (
+from custom_components.myorlen_gas_sensor.ppg_reading_for_meter import (
     MeterReading,
     PpgReadingForMeter,
 )
 from custom_components.myorlen_gas_sensor.sensor import myORLENSensor, myORLENInvoiceSensor, myORLENCostTrackingSensor
-from custom_components.myorlen_gas_sensor.Invoices import Invoices, InvoicesList
+from custom_components.myorlen_gas_sensor.invoices import Invoices, InvoicesList
 
 
 @pytest.mark.asyncio
