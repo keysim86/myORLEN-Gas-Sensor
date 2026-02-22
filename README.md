@@ -67,4 +67,4 @@ The data source for this integration is https://ebok.myorlen.pl/
 
 The author of this project categorically rejects any and all responsibility for the data that were presented by the integration.
 
-Anything else? Post a [question.](https://github.com/keysim86/myOrlen-sensor/issues/new)
+Anything else? Post a [question.](https://github.com/keysim86/myORLEN-Gas-Sensor/issues/new)
