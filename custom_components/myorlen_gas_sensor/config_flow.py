@@ -5,8 +5,8 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 
-from custom_components.myorlen_gas_sensor.myorlen import myORLENApi
-from custom_components.myorlen_gas_sensor.myorlen import myORLENApiApi
+from custom_components.myorlen_gas_sensor.myORLENApi import myORLENApi
+
 
 AUTH_SCHEMA = vol.Schema({
     vol.Required(CONF_USERNAME): cv.string,
