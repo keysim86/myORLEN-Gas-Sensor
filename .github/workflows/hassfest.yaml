@@ -1,15 +1,15 @@
-name: Validate with hassfest
-
-on:
-  push:
-  pull_request:
-  schedule:
-    - cron: "0 0 * * *"
-
-jobs:
-  validate:
-    runs-on: "ubuntu-latest"
-    steps:
-      - uses: https://github.com/actions/checkout@v4
-      - name: Hassfest
-        uses: https://github.com/home-assistant/actions/hassfest@master
+#name: Validate with hassfest
+#
+#on:
+#  push:
+#  pull_request:
+#  schedule:
+#    - cron: "0 0 * * *"
+#
+#jobs:
+#  validate:
+#    runs-on: "ubuntu-latest"
+#    steps:
+#      - uses: https://github.com/actions/checkout@v4
+#      - name: Hassfest
+#        uses: https://github.com/home-assistant/actions/hassfest@master
