@@ -2,9 +2,6 @@ import string
 
 import requests
 
-from .Invoices import invoices_from_dict, Invoices
-from .PgpList import (PpgList, ppg_list_from_dict)
-from .PpgReadingForMeter import PpgReadingForMeter, ppg_reading_for_meter_from_dict
 from .invoices import invoices_from_dict, Invoices
 from .pgp_list import (PpgList, ppg_list_from_dict)
 from .ppg_reading_for_meter import PpgReadingForMeter, ppg_reading_for_meter_from_dict
