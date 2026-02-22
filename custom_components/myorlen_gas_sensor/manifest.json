@@ -1,14 +1,14 @@
 {
   "domain": "myorlen_gas_sensor",
   "name": "myORLEN gas Sensor",
-  "documentation": "https://github.com/keysim86/myORLEN-Gas-Sensor",
-  "issue_tracker": "https://github.com/keysim86/myORLEN-Gas-Sensor/issues",
-  "dependencies": [],
-  "config_flow": true,
   "codeowners": [
     "@keysim86"
   ],
-  "requirements": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/keysim86/myORLEN-Gas-Sensor",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/keysim86/myORLEN-Gas-Sensor/issues",
+  "requirements": [],
   "version": "1.0.0"
 }
