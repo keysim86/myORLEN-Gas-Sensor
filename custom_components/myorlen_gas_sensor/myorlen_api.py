@@ -44,15 +44,8 @@ class myORLENApi:
             'AuthToken': (self.login())
         }).json())
 
-    # def login(self) -> string:
-        # payload = {"identificator": self.username,
-                   # "accessPin": self.password,
-                   # "rememberLogin": "false",
-                   # "DeviceId": "123",  # TODO randomize it
-                   # "DeviceName": "Home Assistant: 99.9.999.99<br>",
-                   # "DeviceType": "Web"}
-        # return requests.request('POST', login_url, headers=headers, json=payload).json().get('Token')
-     init_url = 'https://ebok.myorlen.pl/auth/oid/init-login?api-version=3.0'
+    def login(self) -> string:
+        init_url = 'https://ebok.myorlen.pl/auth/oid/init-login?api-version=3.0'
 
         session = requests.Session()
         headers = {
