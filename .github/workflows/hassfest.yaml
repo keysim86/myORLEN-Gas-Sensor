@@ -10,5 +10,6 @@ jobs:
   validate:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v2"
-      - uses: home-assistant/actions/hassfest@master
+      - uses: https://github.com/actions/checkout@v4
+      - name: Hassfest
+        uses: https://github.com/home-assistant/actions/hassfest@master
