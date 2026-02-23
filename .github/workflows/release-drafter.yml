@@ -7,18 +7,24 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   update_release_draft:
     name: Update release draft
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4 # Zaktualizowałem do nowszej wersji v4
         with:
           fetch-depth: 0
+
       - name: Create Release
         uses: release-drafter/release-drafter@v5
         with:
-          disable-releaser: github.ref != 'refs/heads/main'
+          # Uwaga: Twoja główna gałąź to 'master', a nie 'main'
+          disable-releaser: ${{ github.ref != 'refs/heads/master' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
