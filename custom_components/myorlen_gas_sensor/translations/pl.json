@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Wpisz swoje dane autoryzacyjne do myORLEN EBOK",
-        "description": "Ta integracja dodaje sensory użycia gazu na podstawie odczytów z EBOKu myORLEN.",
+        "description": "Ta integracja dodaje sensory użycia gazu na podstawie odczytów z EBOKu myORLEN.\n\n{error_info}",
         "data": {
           "username": "Login",
           "password": "Hasło",

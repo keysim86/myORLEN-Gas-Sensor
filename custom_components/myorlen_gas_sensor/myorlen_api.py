@@ -1,4 +1,5 @@
 import string
+import logging
 
 import requests
 import re
@@ -14,7 +15,10 @@ invoices_url = "https://ebok.myorlen.pl/crm/get-invoices-v2?pageNumber=1&pageSiz
 headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
 }
+
+_LOGGER = logging.getLogger(__name__)
 
 AUTH_METHOD_ORLEN_ID = "orlen_id"
 AUTH_METHOD_EBOK = "login_ebok"
@@ -58,21 +62,26 @@ class myORLENApi:
 
     def login(self) -> string:
         if self.auth_method == AUTH_METHOD_EBOK:
-            response = requests.post(login_url, json={
+            payload = {
                 "email": self.username,
-                "password": self.password
-            }, headers=headers)
+                "password": self.password,
+                "DeviceId": "a908313085dd4f16deaa4c15897e755e",
+                "DeviceType": "Web",
+                "DeviceName": "HomeAssistant"
+            }
+            response = requests.post(login_url, json=payload, headers=headers)
             if response.status_code == 200:
                 return response.json().get('Token')
+            _LOGGER.error("eBOK Login failed. Status: %s, Response: %s", response.status_code, response.text)
             return ""
 
         init_url = 'https://ebok.myorlen.pl/auth/oid/init-login?api-version=3.0'
 
         session = requests.Session()
-        headers = {
+        session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
-        }
+        })
         init_data = {
             "DeviceId": "a908313085dd4f16deaa4c15897e755e",
             "DeviceType": "Web",
@@ -81,9 +90,9 @@ class myORLENApi:
             "FinalizeRegistrationRedirectUrl": "https://ebok.myorlen.pl/aktywuj-oid/"
         }
 
-        response_init = session.post(init_url, json=init_data, headers={'Content-Type': 'application/json'})
+        response_init = session.post(init_url, json=init_data)
         redirect_url = response_init.json().get('RedirectUrl')
-        response_page = session.get(redirect_url, headers=headers)
+        response_page = session.get(redirect_url)
         match = re.search(r'action="([^"]+)"', response_page.text)
 
         if match:
@@ -93,12 +102,14 @@ class myORLENApi:
                 'password': self.password,
                 'credentialId': ''
             }
-            final_response = session.post(post_url, data=payload, headers=headers)
+            final_response = session.post(post_url, data=payload)
 
             if "https://ebok.myorlen.pl/home" in final_response.url:
                 auth_token_url = f'https://ebok.myorlen.pl/auth/get-auth-token?deviceId={init_data["DeviceId"]}&api-version=3.0'
-                headers.update({'Referer': 'https://ebok.myorlen.pl/'})
-                res_auth = session.get(auth_token_url, headers=headers)
+                session.headers.update({'Referer': 'https://ebok.myorlen.pl/'})
+                res_auth = session.get(auth_token_url)
                 if res_auth.status_code == 200:
                     return res_auth.json().get('Token')
+        else:
+            _LOGGER.error("Failed to find action URL in response page")
         return ""
