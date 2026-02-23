@@ -16,8 +16,8 @@ headers = {
     'Accept': 'application/json',
 }
 
-AUTH_METHOD_ORLEN_ID = "ORLEN ID"
-AUTH_METHOD_EBOK = "Login eBOK"
+AUTH_METHOD_ORLEN_ID = "orlen_id"
+AUTH_METHOD_EBOK = "login_ebok"
 
 
 class myORLENApi:

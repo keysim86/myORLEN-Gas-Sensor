@@ -19,8 +19,8 @@
   "selector": {
     "auth_method": {
       "options": {
-        "ORLEN ID": "ORLEN ID",
-        "Login eBOK": "Logowanie eBOK"
+        "orlen_id": "ORLEN ID",
+        "login_ebok": "Logowanie eBOK"
       }
     }
   }

@@ -12,7 +12,7 @@ sensor:
   - platform: myorlen_gas_sensor
     username: YOUR USERNAME
     password: YOUR PASSWORD
-    auth_method: "ORLEN ID" # Optional. Options: "ORLEN ID" (default) or "Login eBOK"
+    auth_method: "orlen_id" # Optional. Options: "orlen_id" (default) or "login_ebok"
 ```
 It is recommended to confiure the sensor through the UI.
 
