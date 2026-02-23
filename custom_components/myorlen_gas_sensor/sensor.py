@@ -39,7 +39,8 @@ async def async_setup_entry(
     api = myORLENApi(user, password, auth_method)
     try:
         pgps = await hass.async_add_executor_job(api.meterList)
-    except Exception:
+    except Exception as e:
+        _LOGGER.error("Failed to initialize myORLEN sensor: %s", e)
         raise ValueError
 
     for x in pgps.ppg_list:

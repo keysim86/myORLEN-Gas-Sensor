@@ -16,6 +16,7 @@ AUTH_SCHEMA = vol.Schema({
         selector.SelectSelectorConfig(
             options=[AUTH_METHOD_ORLEN_ID, AUTH_METHOD_EBOK],
             mode=selector.SelectSelectorMode.LIST,
+            translation_key="auth_method",
         )
     ),
 })
@@ -29,15 +30,15 @@ class myORLENGasConfigFlow(ConfigFlow, domain="myorlen_gas_sensor"):
 
     async def async_step_user(self, user_input: Optional[Dict[str, Any]] = None):
         errors: Dict[str, str] = {}
-        description_placeholders = {"error_info": ""}
         if user_input is not None:
             api = myORLENApi(user_input[CONF_USERNAME], user_input[CONF_PASSWORD], user_input["auth_method"])
             try:
-                await self.hass.async_add_executor_job(api.login)
+                token = await self.hass.async_add_executor_job(api.login)
+                if not token:
+                    raise Exception("Login failed")
                 return self.async_create_entry(title="myORLEN sensor", data=user_input)
             except Exception as e:
-                errors = {"login_failed": "verify_connection_failed"}
-                description_placeholders = {"error_info": "EBOK Login Failed"}
+                errors = {"base": "verify_connection_failed"}
         return self.async_show_form(
-            step_id="user", data_schema=AUTH_SCHEMA, errors=errors, description_placeholders=description_placeholders
+            step_id="user", data_schema=AUTH_SCHEMA, errors=errors
         )

@@ -28,11 +28,19 @@ class myORLENApi:
         self.auth_method = auth_method
 
     def meterList(self) -> PpgList:
-        return ppg_list_from_dict(requests.get(devices_list_url, headers={
+        token = self.login()
+        if not token:
+            raise Exception("Login failed: No token received")
+
+        response = requests.get(devices_list_url, headers={
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'AuthToken': self.login()
-        }).json())
+            'AuthToken': token
+        })
+        data = response.json()
+        if data is None or "PpgList" not in data:
+            raise Exception("Invalid API response: PpgList missing")
+        return ppg_list_from_dict(data)
 
     def readingForMeter(self, meter_id) -> PpgReadingForMeter:
         return ppg_reading_for_meter_from_dict(requests.get(readings_url + meter_id, headers={
