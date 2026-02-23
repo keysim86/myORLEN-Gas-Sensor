@@ -7,7 +7,8 @@
         "description": "This integration will add sensors to get gas usage data from myORLEN Sensor. \n\n\n\n {error_info}",
         "data": {
           "username": "Username",
-          "password": "Password"
+          "password": "Password",
+          "auth_method": "Login method"
         }
       }
     },
