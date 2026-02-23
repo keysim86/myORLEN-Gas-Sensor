@@ -16,12 +16,16 @@ headers = {
     'Accept': 'application/json',
 }
 
+AUTH_METHOD_ORLEN_ID = "ORLEN ID"
+AUTH_METHOD_EBOK = "Login eBOK"
+
 
 class myORLENApi:
 
-    def __init__(self, username, password) -> None:
+    def __init__(self, username, password, auth_method=AUTH_METHOD_ORLEN_ID) -> None:
         self.username = username
         self.password = password
+        self.auth_method = auth_method
 
     def meterList(self) -> PpgList:
         return ppg_list_from_dict(requests.get(devices_list_url, headers={
@@ -45,6 +49,15 @@ class myORLENApi:
         }).json())
 
     def login(self) -> string:
+        if self.auth_method == AUTH_METHOD_EBOK:
+            response = requests.post(login_url, json={
+                "email": self.username,
+                "password": self.password
+            }, headers=headers)
+            if response.status_code == 200:
+                return response.json().get('Token')
+            return ""
+
         init_url = 'https://ebok.myorlen.pl/auth/oid/init-login?api-version=3.0'
 
         session = requests.Session()

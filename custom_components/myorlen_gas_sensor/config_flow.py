@@ -4,13 +4,20 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
+from homeassistant.helpers import selector
 
-from .myorlen_api import myORLENApi
+from .myorlen_api import myORLENApi, AUTH_METHOD_ORLEN_ID, AUTH_METHOD_EBOK
 
 
 AUTH_SCHEMA = vol.Schema({
     vol.Required(CONF_USERNAME): cv.string,
     vol.Required(CONF_PASSWORD): cv.string,
+    vol.Required("auth_method", default=AUTH_METHOD_ORLEN_ID): selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=[AUTH_METHOD_ORLEN_ID, AUTH_METHOD_EBOK],
+            mode=selector.SelectSelectorMode.LIST,
+        )
+    ),
 })
 
 
@@ -24,7 +31,7 @@ class myORLENGasConfigFlow(ConfigFlow, domain="myorlen_gas_sensor"):
         errors: Dict[str, str] = {}
         description_placeholders = {"error_info": ""}
         if user_input is not None:
-            api = myORLENApi(user_input[CONF_USERNAME], user_input[CONF_PASSWORD])
+            api = myORLENApi(user_input[CONF_USERNAME], user_input[CONF_PASSWORD], user_input["auth_method"])
             try:
                 await self.hass.async_add_executor_job(api.login)
                 return self.async_create_entry(title="myORLEN sensor", data=user_input)

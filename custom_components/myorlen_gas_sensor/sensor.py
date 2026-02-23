@@ -16,13 +16,14 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 
 from .invoices import InvoicesList
-from .myorlen_api import myORLENApi
+from .myorlen_api import myORLENApi, AUTH_METHOD_ORLEN_ID
 from .ppg_reading_for_meter import MeterReading
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_USERNAME): cv.string,
     vol.Required(CONF_PASSWORD): cv.string,
+    vol.Optional("auth_method", default=AUTH_METHOD_ORLEN_ID): cv.string,
 })
 SCAN_INTERVAL = timedelta(hours=8)
 
@@ -34,7 +35,8 @@ async def async_setup_entry(
 ):
     user = config_entry.data[CONF_USERNAME]
     password = config_entry.data[CONF_PASSWORD]
-    api = myORLENApi(user, password)
+    auth_method = config_entry.data.get("auth_method", AUTH_METHOD_ORLEN_ID)
+    api = myORLENApi(user, password, auth_method)
     try:
         pgps = await hass.async_add_executor_job(api.meterList)
     except Exception:
@@ -55,7 +57,7 @@ async def async_setup_platform(
         async_add_entities: Callable,
         discovery_info: Optional[DiscoveryInfoType] = None,
 ) -> None:
-    api = myORLENApi(config.get(CONF_USERNAME), config.get(CONF_PASSWORD))
+    api = myORLENApi(config.get(CONF_USERNAME), config.get(CONF_PASSWORD), config.get("auth_method", AUTH_METHOD_ORLEN_ID))
     try:
         pgps = await hass.async_add_executor_job(api.meterList)
     except Exception:
