@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Enter the credentials to your myORLEN EBOK",
-        "description": "This integration will add sensors to get gas usage data from myORLEN Sensor.\n\n{error_info}",
+        "description": "This integration will add sensors to get gas usage data from myORLEN Sensor.",
         "data": {
           "username": "Username",
           "password": "Password",

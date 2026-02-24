@@ -30,7 +30,6 @@ class myORLENGasConfigFlow(ConfigFlow, domain="myorlen_gas_sensor"):
 
     async def async_step_user(self, user_input: Optional[Dict[str, Any]] = None):
         errors: Dict[str, str] = {}
-        description_placeholders = {"error_info": ""}
         if user_input is not None:
             api = myORLENApi(user_input[CONF_USERNAME], user_input[CONF_PASSWORD], user_input["auth_method"])
             try:
@@ -40,7 +39,6 @@ class myORLENGasConfigFlow(ConfigFlow, domain="myorlen_gas_sensor"):
                 return self.async_create_entry(title="myORLEN sensor", data=user_input)
             except Exception as e:
                 errors = {"base": "verify_connection_failed"}
-                description_placeholders = {"error_info": str(e)}
         return self.async_show_form(
-            step_id="user", data_schema=AUTH_SCHEMA, errors=errors, description_placeholders=description_placeholders
+            step_id="user", data_schema=AUTH_SCHEMA, errors=errors
         )

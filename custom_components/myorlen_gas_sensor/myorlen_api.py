@@ -63,8 +63,9 @@ class myORLENApi:
     def login(self) -> string:
         if self.auth_method == AUTH_METHOD_EBOK:
             payload = {
-                "email": self.username,
-                "password": self.password,
+                "identificator": self.username,
+                "accessPin": self.password,
+                "rememberLogin": "false",
                 "DeviceId": "a908313085dd4f16deaa4c15897e755e",
                 "DeviceType": "Web",
                 "DeviceName": "HomeAssistant"
