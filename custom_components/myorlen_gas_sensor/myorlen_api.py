@@ -1,3 +1,4 @@
+import re
 import string
 import logging
 
@@ -66,9 +67,9 @@ class myORLENApi:
                 "identificator": self.username,
                 "accessPin": self.password,
                 "rememberLogin": "false",
-                "DeviceId": "a908313085dd4f16deaa4c15897e755e",
-                "DeviceType": "Web",
-                "DeviceName": "HomeAssistant"
+                "DeviceId": "123",
+                "DeviceName": "Home Assistant: 99.9.999.99<br>",
+                "DeviceType": "Web"
             }
             response = requests.post(login_url, json=payload, headers=headers)
             if response.status_code == 200:

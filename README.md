@@ -12,7 +12,7 @@ sensor:
   - platform: myorlen_gas_sensor
     username: YOUR USERNAME
     password: YOUR PASSWORD
-    auth_method: "orlen_id" # Optional. Options: "orlen_id" (default) or "login_ebok"
+    auth_method: "ORLEN ID" # Optional. Options: ORLEN ID (default) or eBOK Login
 ```
 It is recommended to confiure the sensor through the UI.
 
@@ -20,6 +20,17 @@ It is recommended to confiure the sensor through the UI.
 1) Navigate to Settings > Devices & Services and then click Add Integration
 2) Search for myORLEN gas sensor
 3) Enter your credentials (e-mail and password)
+4) Select the authentication method
+
+## Authentication Methods
+
+The integration supports two authentication methods:
+
+### ORLEN ID — default
+Uses the ORLEN ID (SSO) login flow. The integration initiates an OAuth-like session, navigates through the ORLEN ID login page, and retrieves an API token. This is the recommended method for accounts created or migrated to ORLEN ID.
+
+### eBOK Login
+Uses the classic eBOK direct login endpoint (`/auth/login`). Authenticates with `identificator` (e-mail) and `accessPin` (password) directly against the myORLEN eBOK API. Use this method if your account was originally created in the PGNiG/eBOK portal and has not been migrated to ORLEN ID.
 
 ## Technical Details
 
