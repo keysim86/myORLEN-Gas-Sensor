@@ -20,7 +20,7 @@
     "auth_method": {
       "options": {
         "orlen_id": "ORLEN ID",
-        "login_ebok": "Logowanie eBOK"
+        "login_ebok": "Login eBOK"
       }
     }
   }
