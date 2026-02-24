@@ -2,7 +2,7 @@ import string
 import logging
 
 import requests
-import re
+
 
 from .invoices import invoices_from_dict, Invoices
 from .pgp_list import (PpgList, ppg_list_from_dict)

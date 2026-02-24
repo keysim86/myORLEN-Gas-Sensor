@@ -4,15 +4,24 @@
     "step": {
       "user": {
         "title": "Enter the credentials to your myORLEN EBOK",
-        "description": "This integration will add sensors to get gas usage data from myORLEN Sensor. \n\n\n\n {error_info}",
+        "description": "This integration will add sensors to get gas usage data from myORLEN Sensor.",
         "data": {
           "username": "Username",
-          "password": "Password"
+          "password": "Password",
+          "auth_method": "Login method"
         }
       }
     },
     "error": {
       "verify_connection_failed": "Login failed!"
+    }
+  },
+  "selector": {
+    "auth_method": {
+      "options": {
+        "orlen_id": "ORLEN ID",
+        "login_ebok": "eBOK Login"
+      }
     }
   }
 }
