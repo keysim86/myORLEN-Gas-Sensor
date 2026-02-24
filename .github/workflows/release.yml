@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: https://github.com/actions/checkout@v4
+        uses: actions/checkout@v4
 
       - name: Get version
         id: version
-        uses: https://github.com/home-assistant/actions/helpers/version@master
+        uses: home-assistant/actions/helpers/version@master
 
       - name: "Set manifest version number"
         run: |
@@ -25,7 +25,7 @@ jobs:
           cd custom_components/myorlen_gas_sensor
           zip myorlen_gas_sensor.zip -r ./
       - name: Upload zip to release
-        uses: https://github.com/svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./custom_components/myorlen_gas_sensor/myorlen_gas_sensor.zip
