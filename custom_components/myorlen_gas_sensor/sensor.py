@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import string
 from datetime import timedelta
 from typing import Callable, Optional
 
@@ -72,21 +71,13 @@ async def async_setup_platform(
             update_before_add=True)
 
 
-class myORLENSensor(SensorEntity):
-    def __init__(self, hass, api: myORLENApi, meter_id: string, id_local: int) -> None:
-        self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
-        self._attr_device_class = SensorDeviceClass.GAS
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
-        self._state: MeterReading | None = None
+class myORLENBaseSensor(SensorEntity):
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
+        self._state = None
         self.hass = hass
         self.api = api
         self.meter_id = meter_id
         self.id_local = id_local
-        self.entity_name = "myORLEN Gas Sensor " + meter_id + " " + str(id_local)
-
-    @property
-    def unique_id(self) -> str | None:
-        return "myorlen_sensor" + self.meter_id + "_" + str(self.id_local)
 
     @property
     def device_info(self):
@@ -101,6 +92,20 @@ class myORLENSensor(SensorEntity):
     @property
     def name(self) -> str:
         return self.entity_name
+
+
+class myORLENSensor(myORLENBaseSensor):
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
+        super().__init__(hass, api, meter_id, id_local)
+        self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
+        self._attr_device_class = SensorDeviceClass.GAS
+        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+        self._state: MeterReading | None = None
+        self.entity_name = f"myORLEN Gas Sensor {meter_id} {id_local}"
+
+    @property
+    def unique_id(self) -> str | None:
+        return f"myorlen_sensor{self.meter_id}_{self.id_local}"
 
     @property
     def state(self):
@@ -127,35 +132,18 @@ class myORLENSensor(SensorEntity):
         return max(readings, key=lambda z: z.reading_date_utc)
 
 
-class myORLENInvoiceSensor(SensorEntity):
-    def __init__(self, hass, api: myORLENApi, meter_id: string, id_local: int) -> None:
+class myORLENInvoiceSensor(myORLENBaseSensor):
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
+        super().__init__(hass, api, meter_id, id_local)
         self._attr_native_unit_of_measurement = "PLN"
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._state: MeterReading | None = None
-        self.hass = hass
-        self.api = api
-        self.meter_id = meter_id
-        self.id_local = id_local
-        self.entity_name = "myORLEN Gas Invoice Sensor " + meter_id + " " + str(id_local)
+        self._state: dict | None = None
+        self.entity_name = f"myORLEN Gas Invoice Sensor {meter_id} {id_local}"
 
     @property
     def unique_id(self) -> str | None:
-        return "myorlen_invoice_sensor" + self.meter_id + "_" + str(self.id_local)
-
-    @property
-    def device_info(self):
-        return {
-            "identifiers": {("myorlen_gas_sensor", self.meter_id)},
-            "name": f"myORLEN GAS METER ID {self.meter_id}",
-            "manufacturer": "myORLEN",
-            "model": self.meter_id,
-            "via_device": None,
-        }
-
-    @property
-    def name(self) -> str:
-        return self.entity_name
+        return f"myorlen_invoice_sensor{self.meter_id}_{self.id_local}"
 
     @property
     def state(self):
@@ -200,35 +188,18 @@ class myORLENInvoiceSensor(SensorEntity):
         }
 
 
-class myORLENCostTrackingSensor(SensorEntity):
-    def __init__(self, hass, api: myORLENApi, meter_id: string, id_local: int) -> None:
+class myORLENCostTrackingSensor(myORLENBaseSensor):
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
+        super().__init__(hass, api, meter_id, id_local)
         self._attr_native_unit_of_measurement = "PLN/m³"
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._state: InvoicesList | None = None
-        self.hass = hass
-        self.api = api
-        self.meter_id = meter_id
-        self.id_local = id_local
-        self.entity_name = "myORLEN Gas Cost Tracking Sensor " + meter_id + " " + str(id_local)
+        self.entity_name = f"myORLEN Gas Cost Tracking Sensor {meter_id} {id_local}"
 
     @property
     def unique_id(self) -> str | None:
-        return "myorlen_cost_tracking_sensor" + self.meter_id + "_" + str(self.id_local)
-
-    @property
-    def device_info(self):
-        return {
-            "identifiers": {("myorlen_gas_sensor", self.meter_id)},
-            "name": f"myORLEN GAS METER ID {self.meter_id}",
-            "manufacturer": "myORLEN",
-            "model": self.meter_id,
-            "via_device": None,
-        }
-
-    @property
-    def name(self) -> str:
-        return self.entity_name
+        return f"myorlen_cost_tracking_sensor{self.meter_id}_{self.id_local}"
 
     @property
     def state(self):

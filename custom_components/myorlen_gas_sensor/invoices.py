@@ -105,11 +105,11 @@ class InvoicesList:
         temp_type = from_str(obj.get("TempType"))
         days_remaining_to_deadline = int(obj.get("DaysRemainingToDeadline", 0) or 0)
         has_iban = from_bool(obj.get("HasIban"))
-        iban = from_str(obj.get("Iban")) if obj.get("Iban") is not None else ""
+        iban = from_str(obj.get("Iban"))
         status = from_str(obj.get("Status"))
         pdf_exists = from_bool(obj.get("PdfExists"))
         is_interest_note = from_bool(obj.get("IsInterestNote"))
-        is_credit_note = from_bool(obj.get("IsCreditNote")) if obj.get("IsCreditNote") is not None else False
+        is_credit_note = obj.get("IsCreditNote") or False
         color = from_str(obj.get("Color"))
         agreement_name = from_str(obj.get("AgreementName"))
         agreement_number = from_str(obj.get("AgreementNumber"))
