@@ -26,15 +26,19 @@ jobs:
           VERSION_NO="${VERSION_NO#v}"
           python3 .github/scripts/update_hacs_manifest.py --version "$VERSION_NO"
 
-      - name: Commit updated manifest
+      - name: Commit updated manifest via API
+        env:
+          FORGEJO_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@forgejo.keynet.ovh"
-          git fetch origin master
-          git checkout -B master origin/master
-          git add custom_components/myorlen_gas_sensor/manifest.json
-          git commit -m "chore: bump manifest version to ${{ steps.version.outputs.VERSION }}"
-          git push origin master
+          SHA=$(curl -s \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/contents/custom_components/myorlen_gas_sensor/manifest.json?ref=master" \
+            -H "Authorization: token $FORGEJO_TOKEN" | jq -r '.sha')
+          CONTENT=$(base64 -w 0 custom_components/myorlen_gas_sensor/manifest.json)
+          curl -s -X PUT \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/contents/custom_components/myorlen_gas_sensor/manifest.json" \
+            -H "Authorization: token $FORGEJO_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"message\": \"chore: bump manifest version to ${{ steps.version.outputs.VERSION }}\", \"content\": \"$CONTENT\", \"sha\": \"$SHA\", \"branch\": \"master\"}"
 
       - name: Create zip
         run: |
