@@ -26,6 +26,14 @@ jobs:
           VERSION_NO="${VERSION_NO#v}"
           python3 .github/scripts/update_hacs_manifest.py --version "$VERSION_NO"
 
+      - name: Commit updated manifest
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@forgejo.keynet.ovh"
+          git add custom_components/myorlen_gas_sensor/manifest.json
+          git commit -m "chore: bump manifest version to ${{ steps.version.outputs.VERSION }}"
+          git push origin HEAD:master
+
       - name: Create zip
         run: |
           cd custom_components/myorlen_gas_sensor

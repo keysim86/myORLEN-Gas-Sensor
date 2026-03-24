@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.1] - 2026-03-24
+
+### Zmieniono
+- Workflow commituje zaktualizowany manifest.json z powrotem do repo
+
 ## [1.3.0] - 2026-03-24
 
 ### Zmieniono
