@@ -30,6 +30,8 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@forgejo.keynet.ovh"
+          git fetch origin master
+          git rebase origin/master
           git add custom_components/myorlen_gas_sensor/manifest.json
           git commit -m "chore: bump manifest version to ${{ steps.version.outputs.VERSION }}"
           git push origin HEAD:master
