@@ -1,34 +1,74 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
-  release_zip_file:
-    name: Prepare release asset
+  release:
+    if: ${{ !contains(github.server_url, 'github.com') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Get version
+      - name: Get version from tag
         id: version
-        uses: home-assistant/actions/helpers/version@master
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: "Set manifest version number"
+      - name: Update manifest version
         run: |
-          python3 ${{ github.workspace }}/.github/scripts/update_hacs_manifest.py --version ${{ steps.version.outputs.version }}
+          VERSION_NO="${{ steps.version.outputs.VERSION }}"
+          VERSION_NO="${VERSION_NO#v}"
+          python3 .github/scripts/update_hacs_manifest.py --version "$VERSION_NO"
 
       - name: Create zip
         run: |
           cd custom_components/myorlen_gas_sensor
-          zip myorlen_gas_sensor.zip -r ./
-      - name: Upload zip to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./custom_components/myorlen_gas_sensor/myorlen_gas_sensor.zip
-          asset_name: myorlen_gas_sensor.zip
-          tag: ${{ github.ref }}
-          overwrite: true
+          zip -r myorlen_gas_sensor.zip ./
+
+      - name: Create Forgejo Release
+        env:
+          FORGEJO_TOKEN: ${{ github.token }}
+        run: |
+          VERSION_NO="${{ steps.version.outputs.VERSION }}"
+          VERSION_NO="${VERSION_NO#v}"
+          BODY=$(awk "/^## \[$VERSION_NO\]/{found=1; next} /^## \[/{if(found) exit} found{print}" CHANGELOG.md | jq -Rs .)
+          RESPONSE=$(curl -s -X POST \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases" \
+            -H "Authorization: token $FORGEJO_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\": \"${{ steps.version.outputs.VERSION }}\", \"name\": \"myORLEN Gas Sensor ${{ steps.version.outputs.VERSION }}\", \"body\": $BODY}")
+          RELEASE_ID=$(echo $RESPONSE | jq -r '.id')
+          curl -s -X POST \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" \
+            -H "Authorization: token $FORGEJO_TOKEN" \
+            -F "attachment=@custom_components/myorlen_gas_sensor/myorlen_gas_sensor.zip"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          VERSION_NO="${{ steps.version.outputs.VERSION }}"
+          VERSION_NO="${VERSION_NO#v}"
+          BODY=$(awk "/^## \[$VERSION_NO\]/{found=1; next} /^## \[/{if(found) exit} found{print}" CHANGELOG.md | jq -Rs .)
+          RESPONSE=$(curl -s -X POST \
+            "https://api.github.com/repos/keysim86/myORLEN-Gas-Sensor/releases" \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\": \"${{ steps.version.outputs.VERSION }}\", \"target_commitish\": \"master\", \"name\": \"myORLEN Gas Sensor ${{ steps.version.outputs.VERSION }}\", \"body\": $BODY}")
+          echo "GitHub API response: $RESPONSE"
+          RELEASE_ID=$(echo $RESPONSE | jq -r '.id')
+          if [ "$RELEASE_ID" = "null" ] || [ -z "$RELEASE_ID" ]; then
+            echo "ERROR: Failed to create GitHub release"
+            exit 1
+          fi
+          curl -s -X POST \
+            "https://uploads.github.com/repos/keysim86/myORLEN-Gas-Sensor/releases/$RELEASE_ID/assets?name=myorlen_gas_sensor.zip" \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Content-Type: application/zip" \
+            --data-binary "@custom_components/myorlen_gas_sensor/myorlen_gas_sensor.zip"
