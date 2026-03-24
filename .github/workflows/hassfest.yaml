@@ -8,6 +8,7 @@ on:
 
 jobs:
   validate:
+    if: ${{ contains(github.server_url, 'github.com') }}
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v2"

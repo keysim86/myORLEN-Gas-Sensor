@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   update_release_draft:
+    if: ${{ contains(github.server_url, 'github.com') }}
     name: Update release draft
     runs-on: ubuntu-latest
     steps:
