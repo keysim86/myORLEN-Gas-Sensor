@@ -128,8 +128,11 @@ class myORLENSensor(myORLENBaseSensor):
         return attrs
 
     async def async_update(self):
-        latest_meter_reading: MeterReading = await self.hass.async_add_executor_job(self.latestMeterReading)
-        self._state = latest_meter_reading
+        try:
+            result = await self.hass.async_add_executor_job(self.latestMeterReading)
+            self._state = result
+        except Exception as e:
+            _LOGGER.warning("myORLEN gas sensor update failed, keeping last state: %s", e)
 
     def latestMeterReading(self):
         readings = self.api.readingForMeter(self.meter_id).meter_readings
@@ -168,7 +171,11 @@ class myORLENInvoiceSensor(myORLENBaseSensor):
         return attrs
 
     async def async_update(self):
-        self._state = await self.hass.async_add_executor_job(self.invoices_summary)
+        try:
+            result = await self.hass.async_add_executor_job(self.invoices_summary)
+            self._state = result
+        except Exception as e:
+            _LOGGER.warning("myORLEN invoice sensor update failed, keeping last state: %s", e)
 
     def invoices_summary(self):
         id_local = self.id_local
@@ -228,7 +235,11 @@ class myORLENCostTrackingSensor(myORLENBaseSensor):
         return attrs
 
     async def async_update(self):
-        self._state = await self.hass.async_add_executor_job(self.latest_price)
+        try:
+            result = await self.hass.async_add_executor_job(self.latest_price)
+            self._state = result
+        except Exception as e:
+            _LOGGER.warning("myORLEN cost tracking sensor update failed, keeping last state: %s", e)
 
     def latest_price(self):
         id_local = self.id_local
@@ -292,8 +303,12 @@ class myORLENLastInvoiceWearM3Sensor(myORLENBaseSensor):
         }
 
     async def async_update(self):
-        self._state = await self.hass.async_add_executor_job(
-            _latest_invoice_with_wear, self.api, self.id_local)
+        try:
+            result = await self.hass.async_add_executor_job(
+                _latest_invoice_with_wear, self.api, self.id_local)
+            self._state = result
+        except Exception as e:
+            _LOGGER.warning("myORLEN sensor update failed, keeping last state: %s", e)
 
 
 class myORLENLastInvoiceWearKWhSensor(myORLENBaseSensor):
@@ -327,8 +342,12 @@ class myORLENLastInvoiceWearKWhSensor(myORLENBaseSensor):
         }
 
     async def async_update(self):
-        self._state = await self.hass.async_add_executor_job(
-            _latest_invoice_with_wear, self.api, self.id_local)
+        try:
+            result = await self.hass.async_add_executor_job(
+                _latest_invoice_with_wear, self.api, self.id_local)
+            self._state = result
+        except Exception as e:
+            _LOGGER.warning("myORLEN sensor update failed, keeping last state: %s", e)
 
 
 class myORLENConversionFactorSensor(myORLENBaseSensor):
@@ -364,5 +383,9 @@ class myORLENConversionFactorSensor(myORLENBaseSensor):
         }
 
     async def async_update(self):
-        self._state = await self.hass.async_add_executor_job(
-            _latest_invoice_with_wear, self.api, self.id_local)
+        try:
+            result = await self.hass.async_add_executor_job(
+                _latest_invoice_with_wear, self.api, self.id_local)
+            self._state = result
+        except Exception as e:
+            _LOGGER.warning("myORLEN sensor update failed, keeping last state: %s", e)

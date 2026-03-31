@@ -91,7 +91,7 @@ class InvoicesList:
         number = from_str(obj.get("Number"))
         date = from_datetime(obj.get("Date"))
         sell_date = from_datetime(obj.get("SellDate"))
-        gross_amount = from_float(obj.get("GrossAmount"))
+        gross_amount = from_float_or_int(obj.get("GrossAmount"))
         amount_to_pay = from_float_or_int(obj.get("AmountToPay"))
         wear = from_float_or_int(obj.get("Wear"))
         wear_kwh = from_float_or_int(obj.get("WearKWH"))
