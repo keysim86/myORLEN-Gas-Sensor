@@ -31,9 +31,40 @@ class myORLENApi:
         self.username = username
         self.password = password
         self.auth_method = auth_method
+        self._cached_token = None
+
+    def _get_token(self) -> str:
+        if not self._cached_token:
+            self._cached_token = self.login()
+        return self._cached_token
+
+    def _get_token_fresh(self) -> str:
+        self._cached_token = self.login()
+        return self._cached_token
+
+    def _authenticated_get(self, url: str):
+        """GET with cached token; retries once with fresh login on 401."""
+        token = self._get_token()
+        if not token:
+            raise Exception("Login failed: no token received")
+        response = requests.get(url, headers={
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'AuthToken': token,
+        })
+        if response.status_code == 401:
+            token = self._get_token_fresh()
+            if not token:
+                raise Exception("Re-login failed: no token received")
+            response = requests.get(url, headers={
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'AuthToken': token,
+            })
+        return response
 
     def meterList(self) -> PpgList:
-        token = self.login()
+        token = self._get_token_fresh()
         if not token:
             raise Exception("Login failed: No token received")
 
@@ -48,18 +79,10 @@ class myORLENApi:
         return ppg_list_from_dict(data)
 
     def readingForMeter(self, meter_id) -> PpgReadingForMeter:
-        return ppg_reading_for_meter_from_dict(requests.get(readings_url + meter_id, headers={
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'AuthToken': (self.login())
-        }).json())
+        return ppg_reading_for_meter_from_dict(self._authenticated_get(readings_url + meter_id).json())
 
     def invoices(self) -> Invoices:
-        return invoices_from_dict(requests.get(invoices_url, headers={
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'AuthToken': (self.login())
-        }).json())
+        return invoices_from_dict(self._authenticated_get(invoices_url).json())
 
     def login(self) -> string:
         if self.auth_method == AUTH_METHOD_EBOK:

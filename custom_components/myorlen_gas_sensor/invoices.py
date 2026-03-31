@@ -17,6 +17,8 @@ def from_float_or_int(x: Any) -> float:
 
 
 def from_datetime(x: Any) -> datetime:
+    if not x:
+        return datetime(2000, 1, 1, 0, 0, 0)
     return dateutil.parser.parse(x)
 
 

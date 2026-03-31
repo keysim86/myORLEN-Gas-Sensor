@@ -10,7 +10,8 @@ import voluptuous as vol
 from homeassistant.components.sensor import SensorEntity, PLATFORM_SCHEMA, SensorStateClass, SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, UnitOfVolume, UnitOfEnergy
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 
@@ -25,6 +26,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional("auth_method", default=AUTH_METHOD_ORLEN_ID): cv.string,
 })
 SCAN_INTERVAL = timedelta(hours=8)
+RETRY_INTERVAL = 900  # 15 minut gdy sensor jest nieznany/unavailable
 
 
 async def async_setup_entry(
@@ -84,6 +86,28 @@ class myORLENBaseSensor(SensorEntity):
         self.api = api
         self.meter_id = meter_id
         self.id_local = id_local
+        self._unsub_retry = None
+
+    def _schedule_retry(self):
+        if self._unsub_retry:
+            self._unsub_retry()
+
+        @callback
+        def _do_retry(_now):
+            self._unsub_retry = None
+            self.hass.async_create_task(
+                self.async_schedule_update_ha_state(force_refresh=True)
+            )
+
+        self._unsub_retry = async_call_later(self.hass, RETRY_INTERVAL, _do_retry)
+
+    def _cancel_retry(self):
+        if self._unsub_retry:
+            self._unsub_retry()
+            self._unsub_retry = None
+
+    async def async_will_remove_from_hass(self):
+        self._cancel_retry()
 
     @property
     def device_info(self):
@@ -131,8 +155,13 @@ class myORLENSensor(myORLENBaseSensor):
         try:
             result = await self.hass.async_add_executor_job(self.latestMeterReading)
             self._state = result
+            if result is None:
+                self._schedule_retry()
+            else:
+                self._cancel_retry()
         except Exception as e:
             _LOGGER.warning("myORLEN gas sensor update failed, keeping last state: %s", e)
+            self._schedule_retry()
 
     def latestMeterReading(self):
         readings = self.api.readingForMeter(self.meter_id).meter_readings
@@ -174,8 +203,13 @@ class myORLENInvoiceSensor(myORLENBaseSensor):
         try:
             result = await self.hass.async_add_executor_job(self.invoices_summary)
             self._state = result
+            if result is None:
+                self._schedule_retry()
+            else:
+                self._cancel_retry()
         except Exception as e:
             _LOGGER.warning("myORLEN invoice sensor update failed, keeping last state: %s", e)
+            self._schedule_retry()
 
     def invoices_summary(self):
         id_local = self.id_local
@@ -238,8 +272,13 @@ class myORLENCostTrackingSensor(myORLENBaseSensor):
         try:
             result = await self.hass.async_add_executor_job(self.latest_price)
             self._state = result
+            if result is None:
+                self._schedule_retry()
+            else:
+                self._cancel_retry()
         except Exception as e:
             _LOGGER.warning("myORLEN cost tracking sensor update failed, keeping last state: %s", e)
+            self._schedule_retry()
 
     def latest_price(self):
         id_local = self.id_local
@@ -307,8 +346,13 @@ class myORLENLastInvoiceWearM3Sensor(myORLENBaseSensor):
             result = await self.hass.async_add_executor_job(
                 _latest_invoice_with_wear, self.api, self.id_local)
             self._state = result
+            if result is None:
+                self._schedule_retry()
+            else:
+                self._cancel_retry()
         except Exception as e:
             _LOGGER.warning("myORLEN sensor update failed, keeping last state: %s", e)
+            self._schedule_retry()
 
 
 class myORLENLastInvoiceWearKWhSensor(myORLENBaseSensor):
@@ -346,8 +390,13 @@ class myORLENLastInvoiceWearKWhSensor(myORLENBaseSensor):
             result = await self.hass.async_add_executor_job(
                 _latest_invoice_with_wear, self.api, self.id_local)
             self._state = result
+            if result is None:
+                self._schedule_retry()
+            else:
+                self._cancel_retry()
         except Exception as e:
             _LOGGER.warning("myORLEN sensor update failed, keeping last state: %s", e)
+            self._schedule_retry()
 
 
 class myORLENConversionFactorSensor(myORLENBaseSensor):
@@ -387,5 +436,10 @@ class myORLENConversionFactorSensor(myORLENBaseSensor):
             result = await self.hass.async_add_executor_job(
                 _latest_invoice_with_wear, self.api, self.id_local)
             self._state = result
+            if result is None:
+                self._schedule_retry()
+            else:
+                self._cancel_retry()
         except Exception as e:
             _LOGGER.warning("myORLEN sensor update failed, keeping last state: %s", e)
+            self._schedule_retry()

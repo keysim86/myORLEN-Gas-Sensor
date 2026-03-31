@@ -11,6 +11,8 @@ def from_str(x: Any) -> str:
 
 
 def from_datetime(x: Any) -> datetime:
+    if not x:
+        return datetime(2000, 1, 1, 0, 0, 0)
     return dateutil.parser.parse(x)
 
 
@@ -57,8 +59,8 @@ class MeterReading:
         status = from_str(obj.get("Status"))
         reading_date_local = from_datetime(obj.get("ReadingDateLocal"))
         reading_date_utc = from_datetime(obj.get("ReadingDateUtc"))
-        pp_id = int(from_str(obj.get("PpId")))
-        value = from_int(obj.get("Value"))
+        pp_id = int(obj.get("PpId") or 0)
+        value = obj.get("Value") or 0
         value2 = from_none(obj.get("Value2"))
         value3 = from_none(obj.get("Value3"))
         meter_number = from_str(obj.get("MeterNumber"))
