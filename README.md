@@ -38,7 +38,7 @@ The sensor uses API from https://ebok.myorlen.pl
 and is particularly focused on the last reading endpoint. 
 
 The data is refreshed every 8 hours or on the sensor startup.
-The sensors are not updated if the data hasn't changed.
+If a sensor returns an unknown or unavailable state, it automatically retries after 15 minutes.
 There are 6 different sensors created per meter.
 
 ### Gas sensor

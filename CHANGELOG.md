@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.0] - 2026-03-31
+
+### Fixed
+- `ppg_reading_for_meter.py`: pole `Value: null` w API powodowało wyświetlanie "nieznany" dla sensora Stan Licznika; `PpId: null` i null daty powodowały crash parsera
+- `invoices.py`: null daty w odpowiedzi API powodowały crash parsowania listy faktur
+- Każde wywołanie `invoices()` / `readingForMeter()` wykonywało pełny OAuth login od nowa — 6 sensorów przy starcie robiło równoległe loginy, co powodowało wyścig i część sensorów (m.in. Conversion Factor) dostawała pusty token → "nieznany"
+
+### Added
+- Cachowanie tokenu autoryzacji w `myORLENApi` — token reużywany między wywołaniami, automatyczne odświeżenie przy HTTP 401
+- Mechanizm retry: gdy sensor zwraca `nieznany` lub wystąpi błąd API, automatyczna ponowna próba po 15 minutach (zamiast czekania 8 godzin)
+
 ## [1.4.1] - 2026-03-31
 
 ### Fixed
