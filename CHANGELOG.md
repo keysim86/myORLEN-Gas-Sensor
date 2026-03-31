@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.1] - 2026-03-31
+
+### Fixed
+- Sensor kosztów (i pozostałe sensory oparte o faktury) przestawał działać gdy API zwróciło `GrossAmount: null` — `float(None)` rzucał `TypeError` przerywając parsowanie całej listy faktur
+- Dodano obsługę wyjątków w `async_update` wszystkich sensorów — błąd sieciowy lub wygasły token zachowuje teraz ostatnią poprawną wartość zamiast przestawiać sensor na `unavailable`
+
+## [1.4.0] - 2026-03-31
+
+### Dodano
+- Sensor **Last Invoice Wear M3** — zużycie gazu z ostatniej faktury w m³
+- Sensor **Last Invoice Wear KWH** — zużycie gazu z ostatniej faktury w kWh
+- Sensor **Conversion Factor** — współczynnik konwersji gazu (kWh/m³) obliczany z ostatniej faktury; atrybuty: numer faktury, data wystawienia, wartości m³ i kWh
+
 ## [1.3.1] - 2026-03-24
 
 ### Zmieniono
