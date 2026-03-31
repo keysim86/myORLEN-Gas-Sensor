@@ -9,7 +9,7 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import SensorEntity, PLATFORM_SCHEMA, SensorStateClass, SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, UnitOfVolume
+from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, UnitOfVolume, UnitOfEnergy
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
@@ -47,7 +47,10 @@ async def async_setup_entry(
         async_add_entities(
             [myORLENSensor(hass, api, meter_id, x.id_local),
              myORLENInvoiceSensor(hass, api, meter_id, x.id_local),
-             myORLENCostTrackingSensor(hass, api, meter_id, x.id_local)],
+             myORLENCostTrackingSensor(hass, api, meter_id, x.id_local),
+             myORLENLastInvoiceWearM3Sensor(hass, api, meter_id, x.id_local),
+             myORLENLastInvoiceWearKWhSensor(hass, api, meter_id, x.id_local),
+             myORLENConversionFactorSensor(hass, api, meter_id, x.id_local)],
             update_before_add=True)
 
 
@@ -67,7 +70,10 @@ async def async_setup_platform(
         async_add_entities(
             [myORLENSensor(hass, api, x.meter_number, x.id_local),
              myORLENInvoiceSensor(hass, api, x.meter_number, x.id_local),
-             myORLENCostTrackingSensor(hass, api, x.meter_number, x.id_local)],
+             myORLENCostTrackingSensor(hass, api, x.meter_number, x.id_local),
+             myORLENLastInvoiceWearM3Sensor(hass, api, x.meter_number, x.id_local),
+             myORLENLastInvoiceWearKWhSensor(hass, api, x.meter_number, x.id_local),
+             myORLENConversionFactorSensor(hass, api, x.meter_number, x.id_local)],
             update_before_add=True)
 
 
@@ -241,3 +247,122 @@ class myORLENCostTrackingSensor(myORLENBaseSensor):
 
         valid_invoices = list(filter(has_valid_consumption, invoices))
         return max(valid_invoices, key=lambda z: z.date) if valid_invoices else None
+
+
+def _latest_invoice_with_wear(api, id_local):
+    """Zwraca najnowszą fakturę z niepustym zużyciem m3 i kWh dla danego licznika."""
+    invoices = api.invoices().invoices_list
+    valid = [
+        x for x in invoices
+        if str(id_local) == str(x.id_pp)
+        and (x.wear_m3 or x.wear)
+        and x.wear_kwh
+        and not x.is_credit_note
+    ]
+    return max(valid, key=lambda z: z.date) if valid else None
+
+
+class myORLENLastInvoiceWearM3Sensor(myORLENBaseSensor):
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
+        super().__init__(hass, api, meter_id, id_local)
+        self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._state: InvoicesList | None = None
+        self.entity_name = f"myORLEN Gas Last Invoice Wear M3 {meter_id} {id_local}"
+
+    @property
+    def unique_id(self) -> str | None:
+        return f"myorlen_last_invoice_wear_m3_{self.meter_id}_{self.id_local}"
+
+    @property
+    def state(self):
+        if self._state is None:
+            return None
+        return self._state.wear_m3 or self._state.wear
+
+    @property
+    def extra_state_attributes(self):
+        if self._state is None:
+            return {}
+        return {
+            "invoice_number": self._state.number,
+            "invoice_date": self._state.date,
+            "period_start": self._state.start_date,
+            "period_end": self._state.end_date,
+        }
+
+    async def async_update(self):
+        self._state = await self.hass.async_add_executor_job(
+            _latest_invoice_with_wear, self.api, self.id_local)
+
+
+class myORLENLastInvoiceWearKWhSensor(myORLENBaseSensor):
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
+        super().__init__(hass, api, meter_id, id_local)
+        self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+        self._attr_device_class = SensorDeviceClass.ENERGY
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._state: InvoicesList | None = None
+        self.entity_name = f"myORLEN Gas Last Invoice Wear KWH {meter_id} {id_local}"
+
+    @property
+    def unique_id(self) -> str | None:
+        return f"myorlen_last_invoice_wear_kwh_{self.meter_id}_{self.id_local}"
+
+    @property
+    def state(self):
+        if self._state is None:
+            return None
+        return self._state.wear_kwh
+
+    @property
+    def extra_state_attributes(self):
+        if self._state is None:
+            return {}
+        return {
+            "invoice_number": self._state.number,
+            "invoice_date": self._state.date,
+            "period_start": self._state.start_date,
+            "period_end": self._state.end_date,
+        }
+
+    async def async_update(self):
+        self._state = await self.hass.async_add_executor_job(
+            _latest_invoice_with_wear, self.api, self.id_local)
+
+
+class myORLENConversionFactorSensor(myORLENBaseSensor):
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
+        super().__init__(hass, api, meter_id, id_local)
+        self._attr_native_unit_of_measurement = "kWh/m³"
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._state: InvoicesList | None = None
+        self.entity_name = f"myORLEN Gas Conversion Factor {meter_id} {id_local}"
+
+    @property
+    def unique_id(self) -> str | None:
+        return f"myorlen_conversion_factor_{self.meter_id}_{self.id_local}"
+
+    @property
+    def state(self):
+        if self._state is None:
+            return None
+        m3 = self._state.wear_m3 or self._state.wear
+        if not m3 or not self._state.wear_kwh:
+            return None
+        return round(self._state.wear_kwh / m3, 4)
+
+    @property
+    def extra_state_attributes(self):
+        if self._state is None:
+            return {}
+        return {
+            "invoice_number": self._state.number,
+            "invoice_date": self._state.date,
+            "wear_m3": self._state.wear_m3 or self._state.wear,
+            "wear_kwh": self._state.wear_kwh,
+        }
+
+    async def async_update(self):
+        self._state = await self.hass.async_add_executor_job(
+            _latest_invoice_with_wear, self.api, self.id_local)
