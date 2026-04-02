@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.6.0] - 2026-04-03
 
 ### Added
 - Sensor Stan Licznika: nowe atrybuty `reading_date_local`, `reading_type`, `reading_status` z ostatniego odczytu

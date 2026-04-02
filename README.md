@@ -46,37 +46,39 @@ There are 6 different sensors created per meter.
 Currently, it reads last reading value and wear value. 
 The measurement unit is volume cubic meters.
 
+Attributes: wear, reading date (local time), reading type, reading status, tariff, contract number.
+
 ### Invoice sensor
 
 Sensor reading last unpaid invoice.
 
 The value of the sensor is amount to be paid in PLN. 
-As attributes the sensor is also providing due date, amount to pay, used wear and used wear in KWH.
+As attributes the sensor is also providing due date, amount to pay, used wear, used wear in kWh, days remaining to payment deadline, tariff and contract number.
 
 ### Cost tracking sensor
 
 The sensor is tracking cost from the latest invoice. 
 It divides gross amount by wear in m³. Can be used in energy dashboard to track the cost.
 
-Attributes: invoice date, gross amount, wear in m³, wear in kWh, invoice number.
+Attributes: invoice date, gross amount, wear in m³, wear in kWh, invoice number, tariff, contract number.
 
 ### Last Invoice Wear M3
 
 Consumption in cubic meters (m³) from the most recent invoice with valid consumption data.
 
-Attributes: invoice number, invoice date, billing period start and end.
+Attributes: invoice number, invoice date, billing period start and end, tariff, contract number.
 
 ### Last Invoice Wear KWH
 
 Consumption in kilowatt-hours (kWh) from the most recent invoice with valid consumption data.
 
-Attributes: invoice number, invoice date, billing period start and end.
+Attributes: invoice number, invoice date, billing period start and end, tariff, contract number.
 
 ### Conversion Factor
 
 Gas conversion factor (kWh/m³) calculated from the most recent invoice. Useful for energy cost calculations and gas meter integration in the HA energy dashboard.
 
-Attributes: invoice number, invoice date, wear in m³, wear in kWh.
+Attributes: invoice number, invoice date, wear in m³, wear in kWh, tariff, contract number.
 
 ### Running tests
 
