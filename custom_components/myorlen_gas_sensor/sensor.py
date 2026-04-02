@@ -47,12 +47,12 @@ async def async_setup_entry(
     for x in pgps.ppg_list:
         meter_id = x.meter_number
         async_add_entities(
-            [myORLENSensor(hass, api, meter_id, x.id_local),
-             myORLENInvoiceSensor(hass, api, meter_id, x.id_local),
-             myORLENCostTrackingSensor(hass, api, meter_id, x.id_local),
-             myORLENLastInvoiceWearM3Sensor(hass, api, meter_id, x.id_local),
-             myORLENLastInvoiceWearKWhSensor(hass, api, meter_id, x.id_local),
-             myORLENConversionFactorSensor(hass, api, meter_id, x.id_local)],
+            [myORLENSensor(hass, api, meter_id, x.id_local, x.tariff, x.contract_number),
+             myORLENInvoiceSensor(hass, api, meter_id, x.id_local, x.tariff, x.contract_number),
+             myORLENCostTrackingSensor(hass, api, meter_id, x.id_local, x.tariff, x.contract_number),
+             myORLENLastInvoiceWearM3Sensor(hass, api, meter_id, x.id_local, x.tariff, x.contract_number),
+             myORLENLastInvoiceWearKWhSensor(hass, api, meter_id, x.id_local, x.tariff, x.contract_number),
+             myORLENConversionFactorSensor(hass, api, meter_id, x.id_local, x.tariff, x.contract_number)],
             update_before_add=True)
 
 
@@ -70,22 +70,24 @@ async def async_setup_platform(
 
     for x in pgps.ppg_list:
         async_add_entities(
-            [myORLENSensor(hass, api, x.meter_number, x.id_local),
-             myORLENInvoiceSensor(hass, api, x.meter_number, x.id_local),
-             myORLENCostTrackingSensor(hass, api, x.meter_number, x.id_local),
-             myORLENLastInvoiceWearM3Sensor(hass, api, x.meter_number, x.id_local),
-             myORLENLastInvoiceWearKWhSensor(hass, api, x.meter_number, x.id_local),
-             myORLENConversionFactorSensor(hass, api, x.meter_number, x.id_local)],
+            [myORLENSensor(hass, api, x.meter_number, x.id_local, x.tariff, x.contract_number),
+             myORLENInvoiceSensor(hass, api, x.meter_number, x.id_local, x.tariff, x.contract_number),
+             myORLENCostTrackingSensor(hass, api, x.meter_number, x.id_local, x.tariff, x.contract_number),
+             myORLENLastInvoiceWearM3Sensor(hass, api, x.meter_number, x.id_local, x.tariff, x.contract_number),
+             myORLENLastInvoiceWearKWhSensor(hass, api, x.meter_number, x.id_local, x.tariff, x.contract_number),
+             myORLENConversionFactorSensor(hass, api, x.meter_number, x.id_local, x.tariff, x.contract_number)],
             update_before_add=True)
 
 
 class myORLENBaseSensor(SensorEntity):
-    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int, tariff: str = "", contract_number: str = "") -> None:
         self._state = None
         self.hass = hass
         self.api = api
         self.meter_id = meter_id
         self.id_local = id_local
+        self.tariff = tariff
+        self.contract_number = contract_number
         self._unsub_retry = None
 
     def _schedule_retry(self):
@@ -125,8 +127,8 @@ class myORLENBaseSensor(SensorEntity):
 
 
 class myORLENSensor(myORLENBaseSensor):
-    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
-        super().__init__(hass, api, meter_id, id_local)
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int, tariff: str = "", contract_number: str = "") -> None:
+        super().__init__(hass, api, meter_id, id_local, tariff, contract_number)
         self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
         self._attr_device_class = SensorDeviceClass.GAS
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
@@ -149,6 +151,13 @@ class myORLENSensor(myORLENBaseSensor):
         if self._state is not None:
             attrs["wear"] = self._state.wear
             attrs["wear_unit_of_measurment"] = UnitOfVolume.CUBIC_METERS
+            attrs["reading_date_local"] = self._state.reading_date_local
+            attrs["reading_type"] = self._state.type
+            attrs["reading_status"] = self._state.status
+        if self.tariff:
+            attrs["tariff"] = self.tariff
+        if self.contract_number:
+            attrs["contract_number"] = self.contract_number
         return attrs
 
     async def async_update(self):
@@ -171,8 +180,8 @@ class myORLENSensor(myORLENBaseSensor):
 
 
 class myORLENInvoiceSensor(myORLENBaseSensor):
-    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
-        super().__init__(hass, api, meter_id, id_local)
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int, tariff: str = "", contract_number: str = "") -> None:
+        super().__init__(hass, api, meter_id, id_local, tariff, contract_number)
         self._attr_native_unit_of_measurement = "PLN"
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -197,6 +206,11 @@ class myORLENInvoiceSensor(myORLENBaseSensor):
             attrs["next_payment_amount_to_pay"] = self._state.get("nextPaymentAmountToPay")
             attrs["next_payment_wear"] = self._state.get("nextPaymentWear")
             attrs["next_payment_wear_KWH"] = self._state.get("nextPaymentWearKWH")
+            attrs["days_remaining_to_deadline"] = self._state.get("daysRemainingToDeadline")
+        if self.tariff:
+            attrs["tariff"] = self.tariff
+        if self.contract_number:
+            attrs["contract_number"] = self.contract_number
         return attrs
 
     async def async_update(self):
@@ -232,12 +246,13 @@ class myORLENInvoiceSensor(myORLENBaseSensor):
             "nextPaymentWear": next_payment_item.wear_m3 or next_payment_item.wear if next_payment_item else None,
             "nextPaymentWearKWH": next_payment_item.wear_kwh if next_payment_item else None,
             "nextPaymentAmountToPay": next_payment_item.amount_to_pay if next_payment_item else None,
+            "daysRemainingToDeadline": next_payment_item.days_remaining_to_deadline if next_payment_item else None,
         }
 
 
 class myORLENCostTrackingSensor(myORLENBaseSensor):
-    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
-        super().__init__(hass, api, meter_id, id_local)
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int, tariff: str = "", contract_number: str = "") -> None:
+        super().__init__(hass, api, meter_id, id_local, tariff, contract_number)
         self._attr_native_unit_of_measurement = "PLN/m³"
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -266,6 +281,10 @@ class myORLENCostTrackingSensor(myORLENBaseSensor):
             attrs["last_invoice_wear_m3"] = self._state.wear_m3
             attrs["last_invoice_wear_KWH"] = self._state.wear_kwh
             attrs["last_invoice_number"] = self._state.number
+        if self.tariff:
+            attrs["tariff"] = self.tariff
+        if self.contract_number:
+            attrs["contract_number"] = self.contract_number
         return attrs
 
     async def async_update(self):
@@ -313,8 +332,8 @@ def _latest_invoice_with_wear(api, id_local):
 
 
 class myORLENLastInvoiceWearM3Sensor(myORLENBaseSensor):
-    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
-        super().__init__(hass, api, meter_id, id_local)
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int, tariff: str = "", contract_number: str = "") -> None:
+        super().__init__(hass, api, meter_id, id_local, tariff, contract_number)
         self._attr_native_unit_of_measurement = UnitOfVolume.CUBIC_METERS
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._state: InvoicesList | None = None
@@ -334,12 +353,17 @@ class myORLENLastInvoiceWearM3Sensor(myORLENBaseSensor):
     def extra_state_attributes(self):
         if self._state is None:
             return {}
-        return {
+        attrs = {
             "invoice_number": self._state.number,
             "invoice_date": self._state.date,
             "period_start": self._state.start_date,
             "period_end": self._state.end_date,
         }
+        if self.tariff:
+            attrs["tariff"] = self.tariff
+        if self.contract_number:
+            attrs["contract_number"] = self.contract_number
+        return attrs
 
     async def async_update(self):
         try:
@@ -356,8 +380,8 @@ class myORLENLastInvoiceWearM3Sensor(myORLENBaseSensor):
 
 
 class myORLENLastInvoiceWearKWhSensor(myORLENBaseSensor):
-    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
-        super().__init__(hass, api, meter_id, id_local)
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int, tariff: str = "", contract_number: str = "") -> None:
+        super().__init__(hass, api, meter_id, id_local, tariff, contract_number)
         self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -378,12 +402,17 @@ class myORLENLastInvoiceWearKWhSensor(myORLENBaseSensor):
     def extra_state_attributes(self):
         if self._state is None:
             return {}
-        return {
+        attrs = {
             "invoice_number": self._state.number,
             "invoice_date": self._state.date,
             "period_start": self._state.start_date,
             "period_end": self._state.end_date,
         }
+        if self.tariff:
+            attrs["tariff"] = self.tariff
+        if self.contract_number:
+            attrs["contract_number"] = self.contract_number
+        return attrs
 
     async def async_update(self):
         try:
@@ -400,8 +429,8 @@ class myORLENLastInvoiceWearKWhSensor(myORLENBaseSensor):
 
 
 class myORLENConversionFactorSensor(myORLENBaseSensor):
-    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int) -> None:
-        super().__init__(hass, api, meter_id, id_local)
+    def __init__(self, hass, api: myORLENApi, meter_id: str, id_local: int, tariff: str = "", contract_number: str = "") -> None:
+        super().__init__(hass, api, meter_id, id_local, tariff, contract_number)
         self._attr_native_unit_of_measurement = "kWh/m³"
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._state: InvoicesList | None = None
@@ -424,12 +453,17 @@ class myORLENConversionFactorSensor(myORLENBaseSensor):
     def extra_state_attributes(self):
         if self._state is None:
             return {}
-        return {
+        attrs = {
             "invoice_number": self._state.number,
             "invoice_date": self._state.date,
             "wear_m3": self._state.wear_m3 or self._state.wear,
             "wear_kwh": self._state.wear_kwh,
         }
+        if self.tariff:
+            attrs["tariff"] = self.tariff
+        if self.contract_number:
+            attrs["contract_number"] = self.contract_number
+        return attrs
 
     async def async_update(self):
         try:

@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Sensor Stan Licznika: nowe atrybuty `reading_date_local`, `reading_type`, `reading_status` z ostatniego odczytu
+- Sensor Faktura: nowy atrybut `days_remaining_to_deadline` — liczba dni do terminu płatności najbliższej nieopłaconej faktury
+- Wszystkie sensory: atrybuty `tariff` i `contract_number` pobierane z listy liczników (`get-ppg-list`)
+
 ## [1.5.0] - 2026-03-31
 
 ### Fixed
