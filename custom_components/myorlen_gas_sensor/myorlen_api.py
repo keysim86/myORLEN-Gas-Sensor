@@ -61,6 +61,10 @@ class myORLENApi:
                 'Accept': 'application/json',
                 'AuthToken': token,
             })
+        if not response.text or not response.text.strip():
+            raise Exception(f"Empty response from API (status {response.status_code}): {url}")
+        if response.status_code not in (200, 201):
+            raise Exception(f"API error {response.status_code}: {response.text[:200]}")
         return response
 
     def meterList(self) -> PpgList:

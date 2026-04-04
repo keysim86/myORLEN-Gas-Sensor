@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.1] - 2026-04-04
+
+### Fixed
+- `JSONDecodeError: Expecting value: line 1 column 1 (char 0)` przy pustej lub błędnej odpowiedzi API myORLEN: dodano sprawdzenie pustej odpowiedzi i nieoczekiwanego kodu HTTP w `_authenticated_get()` — zamiast traceback z JSONDecodeError logowany jest czytelny komunikat błędu
+
 ## [1.6.0] - 2026-04-03
 
 ### Added
