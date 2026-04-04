@@ -5,12 +5,16 @@ on:
     tags:
       - "v*"
 
+env:
+  COMPONENT_NAME: myorlen_gas_sensor
+
 permissions:
   contents: write
 
 jobs:
   release:
     if: ${{ !contains(github.server_url, 'github.com') }}
+    name: Prepare release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,26 +28,28 @@ jobs:
         run: |
           VERSION_NO="${{ steps.version.outputs.VERSION }}"
           VERSION_NO="${VERSION_NO#v}"
-          python3 .github/scripts/update_hacs_manifest.py --version "$VERSION_NO"
+          jq --arg v "$VERSION_NO" '.version = $v' \
+            custom_components/${{ env.COMPONENT_NAME }}/manifest.json > /tmp/manifest.json
+          mv /tmp/manifest.json custom_components/${{ env.COMPONENT_NAME }}/manifest.json
 
       - name: Commit updated manifest via API
         env:
           FORGEJO_TOKEN: ${{ github.token }}
         run: |
           SHA=$(curl -s \
-            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/contents/custom_components/myorlen_gas_sensor/manifest.json?ref=master" \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/contents/custom_components/${{ env.COMPONENT_NAME }}/manifest.json?ref=master" \
             -H "Authorization: token $FORGEJO_TOKEN" | jq -r '.sha')
-          CONTENT=$(base64 -w 0 custom_components/myorlen_gas_sensor/manifest.json)
+          CONTENT=$(base64 -w 0 custom_components/${{ env.COMPONENT_NAME }}/manifest.json)
           curl -s -X PUT \
-            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/contents/custom_components/myorlen_gas_sensor/manifest.json" \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/contents/custom_components/${{ env.COMPONENT_NAME }}/manifest.json" \
             -H "Authorization: token $FORGEJO_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"message\": \"chore: bump manifest version to ${{ steps.version.outputs.VERSION }}\", \"content\": \"$CONTENT\", \"sha\": \"$SHA\", \"branch\": \"master\"}"
 
       - name: Create zip
         run: |
-          cd custom_components/myorlen_gas_sensor
-          zip -r myorlen_gas_sensor.zip ./
+          cd "${{ github.workspace }}/custom_components/${{ env.COMPONENT_NAME }}"
+          zip ${{ env.COMPONENT_NAME }}.zip -r ./
 
       - name: Create Forgejo Release
         env:
@@ -62,7 +68,7 @@ jobs:
           curl -s -X POST \
             "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" \
             -H "Authorization: token $FORGEJO_TOKEN" \
-            -F "attachment=@custom_components/myorlen_gas_sensor/myorlen_gas_sensor.zip"
+            -F "attachment=@custom_components/${{ env.COMPONENT_NAME }}/${{ env.COMPONENT_NAME }}.zip"
 
       - name: Create GitHub Release
         env:
@@ -84,7 +90,7 @@ jobs:
             exit 1
           fi
           curl -s -X POST \
-            "https://uploads.github.com/repos/keysim86/myORLEN-Gas-Sensor/releases/$RELEASE_ID/assets?name=myorlen_gas_sensor.zip" \
+            "https://uploads.github.com/repos/keysim86/myORLEN-Gas-Sensor/releases/$RELEASE_ID/assets?name=${{ env.COMPONENT_NAME }}.zip" \
             -H "Authorization: token $GH_TOKEN" \
             -H "Content-Type: application/zip" \
-            --data-binary "@custom_components/myorlen_gas_sensor/myorlen_gas_sensor.zip"
+            --data-binary "@custom_components/${{ env.COMPONENT_NAME }}/${{ env.COMPONENT_NAME }}.zip"
