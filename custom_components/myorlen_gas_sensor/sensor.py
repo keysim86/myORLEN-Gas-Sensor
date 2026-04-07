@@ -270,7 +270,7 @@ class myORLENCostTrackingSensor(myORLENBaseSensor):
         gas_m3 = self._state.wear_m3 or self._state.wear
         if self._state.gross_amount is None or gas_m3 is None or gas_m3 == 0:
             return None
-        return self._state.gross_amount / gas_m3
+        return round(self._state.gross_amount / gas_m3, 4)
 
     @property
     def extra_state_attributes(self):
