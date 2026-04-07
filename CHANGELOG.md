@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.6.2] - 2026-04-07
 
 ### Fixed
 - Sensor "Tracking kosztów": wartość zaokrąglona do 4 miejsc po przecinku (format `x.xxxx`) zamiast pełnej precyzji float

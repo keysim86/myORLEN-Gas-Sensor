@@ -1,104 +1,65 @@
-# myORLEN Sensor 
+[![GitHub Latest Release][releases_shield]][latest_release]
+[![GitHub All Releases][downloads_total_shield]][releases]
+[![HACS][hacs_shield]][hacs]
 
-This sensor is gathering gas usage data for myORLEN clients.
+[releases_shield]: https://img.shields.io/github/release/keysim86/myORLEN-Gas-Sensor.svg?style=popout
+[latest_release]: https://github.com/keysim86/myORLEN-Gas-Sensor/releases/latest
+[releases]: https://github.com/keysim86/myORLEN-Gas-Sensor/releases
+[downloads_total_shield]: https://img.shields.io/github/downloads/keysim86/myORLEN-Gas-Sensor/total
+[hacs_shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=popout
+[hacs]: https://hacs.xyz
 
-It uses API from https://ebok.myorlen.pl/
+# myORLEN Gas Sensor
 
-## Manual Configuration
-Sample configuration
+Integracja do Home Assistant pobierająca dane o zużyciu gazu dla klientów myORLEN / PGNiG.
 
-```yaml
-sensor:
-  - platform: myorlen_gas_sensor
-    username: YOUR USERNAME
-    password: YOUR PASSWORD
-    auth_method: "ORLEN ID" # Optional. Options: ORLEN ID (default) or eBOK Login
-```
-It is recommended to confiure the sensor through the UI.
+Dane są pobierane z API serwisu [ebok.myorlen.pl](https://ebok.myorlen.pl).
 
-## Through the interface
-1) Navigate to Settings > Devices & Services and then click Add Integration
-2) Search for myORLEN gas sensor
-3) Enter your credentials (e-mail and password)
-4) Select the authentication method
+## Sensory
 
-## Authentication Methods
+Na każdy licznik gazowy tworzone jest 6 sensorów:
 
-The integration supports two authentication methods:
+| Sensor | Jednostka | Opis |
+|--------|-----------|------|
+| **Stan licznika** | m³ | Aktualny odczyt licznika gazu. Atrybuty: zużycie od ostatniego odczytu, data odczytu, typ odczytu, status, taryfa, numer umowy. |
+| **Należności** | PLN | Kwota najbliższej nieopłaconej faktury. Atrybuty: termin płatności, kwota, zużycie m³/kWh, dni do terminu, taryfa, numer umowy. |
+| **Tracking kosztów** | PLN/m³ | Koszt gazu z ostatniej faktury (kwota brutto ÷ zużycie m³), zaokrąglony do 4 miejsc po przecinku. Przydatny w panelu Energii do śledzenia kosztów. Atrybuty: data faktury, kwota brutto, zużycie m³/kWh, numer faktury, taryfa, numer umowy. |
+| **Zużycie (faktura) m³** | m³ | Zużycie gazu z ostatniej faktury z prawidłowymi danymi. Atrybuty: numer faktury, data, okres rozliczeniowy, taryfa, numer umowy. |
+| **Zużycie (faktura) kWh** | kWh | Zużycie gazu z ostatniej faktury w kWh. Atrybuty: numer faktury, data, okres rozliczeniowy, taryfa, numer umowy. |
+| **Współczynnik konwersji** | kWh/m³ | Współczynnik przeliczeniowy m³→kWh z ostatniej faktury. Przydatny do integracji licznika gazu w panelu Energii HA. Atrybuty: numer faktury, data, zużycie m³/kWh, taryfa, numer umowy. |
 
-### ORLEN ID — default
-Uses the ORLEN ID (SSO) login flow. The integration initiates an OAuth-like session, navigates through the ORLEN ID login page, and retrieves an API token. This is the recommended method for accounts created or migrated to ORLEN ID.
+## Instalacja
 
-### eBOK Login
-Uses the classic eBOK direct login endpoint (`/auth/login`). Authenticates with `identificator` (e-mail) and `accessPin` (password) directly against the myORLEN eBOK API. Use this method if your account was originally created in the PGNiG/eBOK portal and has not been migrated to ORLEN ID.
+### HACS (zalecane)
 
-## Technical Details
+1. Otwórz HACS → **Integracje**
+2. Kliknij ⋮ → **Własne repozytoria**
+3. Wpisz `keysim86/myORLEN-Gas-Sensor`, kategoria: **Integracja**
+4. Zainstaluj **myORLEN Gas Sensor**
+5. Uruchom ponownie Home Assistant
 
-The sensor uses API from https://ebok.myorlen.pl 
-and is particularly focused on the last reading endpoint. 
+### Ręczna
 
-The data is refreshed every 8 hours or on the sensor startup.
-If a sensor returns an unknown or unavailable state, it automatically retries after 15 minutes.
-There are 6 different sensors created per meter.
+Skopiuj katalog `custom_components/myorlen_gas_sensor` do `config/custom_components/`, następnie zrestartuj Home Assistant.
 
-### Gas sensor
+## Konfiguracja
 
-Currently, it reads last reading value and wear value. 
-The measurement unit is volume cubic meters.
+Przejdź do: **Ustawienia → Urządzenia i usługi → Dodaj integrację → myORLEN Gas Sensor**
 
-Attributes: wear, reading date (local time), reading type, reading status, tariff, contract number.
+W kreatorze podaj login i hasło do konta myORLEN oraz wybierz metodę uwierzytelniania.
 
-### Invoice sensor
+### Metody uwierzytelniania
 
-Sensor reading last unpaid invoice.
+**ORLEN ID (domyślna)**
+Logowanie przez SSO ORLEN ID — zalecane dla kont utworzonych lub zmigrowanych do ORLEN ID.
 
-The value of the sensor is amount to be paid in PLN. 
-As attributes the sensor is also providing due date, amount to pay, used wear, used wear in kWh, days remaining to payment deadline, tariff and contract number.
+**eBOK Login**
+Bezpośrednie logowanie przez klasyczny endpoint eBOK (`/auth/login`). Użyj tej metody jeśli Twoje konto pochodzi z portalu PGNiG/eBOK i nie zostało zmigrowane do ORLEN ID.
 
-### Cost tracking sensor
+## Częstotliwość odświeżania
 
-The sensor is tracking cost from the latest invoice. 
-It divides gross amount by wear in m³. Can be used in energy dashboard to track the cost.
+Dane są pobierane co **8 godzin** oraz przy starcie. Jeśli sensor zwróci stan niedostępny lub nieznany, integracja automatycznie ponawia próbę po **15 minutach**.
 
-Attributes: invoice date, gross amount, wear in m³, wear in kWh, invoice number, tariff, contract number.
+## Uwaga prawna
 
-### Last Invoice Wear M3
-
-Consumption in cubic meters (m³) from the most recent invoice with valid consumption data.
-
-Attributes: invoice number, invoice date, billing period start and end, tariff, contract number.
-
-### Last Invoice Wear KWH
-
-Consumption in kilowatt-hours (kWh) from the most recent invoice with valid consumption data.
-
-Attributes: invoice number, invoice date, billing period start and end, tariff, contract number.
-
-### Conversion Factor
-
-Gas conversion factor (kWh/m³) calculated from the most recent invoice. Useful for energy cost calculations and gas meter integration in the HA energy dashboard.
-
-Attributes: invoice number, invoice date, wear in m³, wear in kWh, tariff, contract number.
-
-### Running tests
-
-```bash
-$ pip3 install -r requirements_test.txt
-```
-
-The dependencies are installed - you can invoke `pytest` to run the tests.
-
-```bash
-$ pytest
-```
-
-# Legal notice
-This is a personal project and isn't in any way affiliated with, sponsored or endorsed by myORLEN.
-
-All product names, trademarks and registered trademarks in (the images in) this repository, are property of their respective owners. All images in this repository are used by the project for identification purposes only.
-
-The data source for this integration is https://ebok.myorlen.pl/
-
-The author of this project categorically rejects any and all responsibility for the data that were presented by the integration.
-
-Anything else? Post a [question.](https://github.com/keysim86/myORLEN-Gas-Sensor/issues/new)
+Projekt prywatny, niepowiązany z myORLEN ani ORLEN S.A. Wszelkie nazwy produktów i znaki towarowe należą do ich właścicieli. Autor nie ponosi odpowiedzialności za dane prezentowane przez integrację.
