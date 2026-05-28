@@ -12,9 +12,9 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  release-forgejo:
     if: ${{ !contains(github.server_url, 'github.com') }}
-    name: Prepare release
+    name: Prepare Forgejo release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,9 +28,13 @@ jobs:
         run: |
           VERSION_NO="${{ steps.version.outputs.VERSION }}"
           VERSION_NO="${VERSION_NO#v}"
-          jq --arg v "$VERSION_NO" '.version = $v' \
-            custom_components/${{ env.COMPONENT_NAME }}/manifest.json > /tmp/manifest.json
-          mv /tmp/manifest.json custom_components/${{ env.COMPONENT_NAME }}/manifest.json
+          python3 -c "
+          import json
+          path = 'custom_components/${{ env.COMPONENT_NAME }}/manifest.json'
+          d = json.load(open(path))
+          d['version'] = '$VERSION_NO'
+          open(path, 'w').write(json.dumps(d, indent=2, ensure_ascii=False) + '\n')
+          "
 
       - name: Commit updated manifest via API
         env:
@@ -38,7 +42,8 @@ jobs:
         run: |
           SHA=$(curl -s \
             "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/contents/custom_components/${{ env.COMPONENT_NAME }}/manifest.json?ref=master" \
-            -H "Authorization: token $FORGEJO_TOKEN" | jq -r '.sha')
+            -H "Authorization: token $FORGEJO_TOKEN" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin).get('sha',''))")
           CONTENT=$(base64 -w 0 custom_components/${{ env.COMPONENT_NAME }}/manifest.json)
           curl -s -X PUT \
             "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/contents/custom_components/${{ env.COMPONENT_NAME }}/manifest.json" \
@@ -57,40 +62,49 @@ jobs:
         run: |
           VERSION_NO="${{ steps.version.outputs.VERSION }}"
           VERSION_NO="${VERSION_NO#v}"
-          BODY=$(awk "/^## \[$VERSION_NO\]/{found=1; next} /^## \[/{if(found) exit} found{print}" CHANGELOG.md | jq -Rs .)
+          BODY=$(awk "/^## \[$VERSION_NO\]/{found=1; next} /^## \[/{if(found) exit} found{print}" CHANGELOG.md \
+            | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
           if echo "$VERSION_NO" | grep -q '-'; then PRERELEASE=true; else PRERELEASE=false; fi
           RESPONSE=$(curl -s -X POST \
             "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases" \
             -H "Authorization: token $FORGEJO_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"tag_name\": \"${{ steps.version.outputs.VERSION }}\", \"name\": \"myORLEN Gas Sensor ${{ steps.version.outputs.VERSION }}\", \"body\": $BODY, \"prerelease\": $PRERELEASE}")
-          RELEASE_ID=$(echo $RESPONSE | jq -r '.id')
+          RELEASE_ID=$(echo "$RESPONSE" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))")
           curl -s -X POST \
             "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" \
             -H "Authorization: token $FORGEJO_TOKEN" \
             -F "attachment=@custom_components/${{ env.COMPONENT_NAME }}/${{ env.COMPONENT_NAME }}.zip"
 
+  release-github:
+    if: ${{ contains(github.server_url, 'github.com') }}
+    name: Prepare GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create zip
+        run: |
+          cd "${{ github.workspace }}/custom_components/${{ env.COMPONENT_NAME }}"
+          zip ${{ env.COMPONENT_NAME }}.zip -r ./
+
       - name: Create GitHub Release
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION_NO="${{ steps.version.outputs.VERSION }}"
-          VERSION_NO="${VERSION_NO#v}"
-          BODY=$(awk "/^## \[$VERSION_NO\]/{found=1; next} /^## \[/{if(found) exit} found{print}" CHANGELOG.md | jq -Rs .)
-          if echo "$VERSION_NO" | grep -q '-'; then PRERELEASE=true; else PRERELEASE=false; fi
-          RESPONSE=$(curl -s -X POST \
-            "https://api.github.com/repos/keysim86/myORLEN-Gas-Sensor/releases" \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"tag_name\": \"${{ steps.version.outputs.VERSION }}\", \"target_commitish\": \"master\", \"name\": \"myORLEN Gas Sensor ${{ steps.version.outputs.VERSION }}\", \"body\": $BODY, \"prerelease\": $PRERELEASE}")
-          echo "GitHub API response: $RESPONSE"
-          RELEASE_ID=$(echo $RESPONSE | jq -r '.id')
-          if [ "$RELEASE_ID" = "null" ] || [ -z "$RELEASE_ID" ]; then
-            echo "ERROR: Failed to create GitHub release"
-            exit 1
-          fi
-          curl -s -X POST \
-            "https://uploads.github.com/repos/keysim86/myORLEN-Gas-Sensor/releases/$RELEASE_ID/assets?name=${{ env.COMPONENT_NAME }}.zip" \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Content-Type: application/zip" \
-            --data-binary "@custom_components/${{ env.COMPONENT_NAME }}/${{ env.COMPONENT_NAME }}.zip"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          VERSION_NO="${VERSION#v}"
+          BODY=$(awk "/^## \[$VERSION_NO\]/{found=1; next} /^## \[/{if(found) exit} found{print}" CHANGELOG.md)
+          PRERELEASE_FLAG=""
+          if echo "$VERSION_NO" | grep -q '-'; then PRERELEASE_FLAG="--prerelease"; fi
+          gh release create "$VERSION" \
+            --title "myORLEN Gas Sensor $VERSION" \
+            --notes "$BODY" \
+            $PRERELEASE_FLAG \
+            "custom_components/${{ env.COMPONENT_NAME }}/${{ env.COMPONENT_NAME }}.zip"
