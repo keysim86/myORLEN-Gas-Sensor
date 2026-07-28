@@ -147,10 +147,21 @@ class myORLENApi:
                 # Login POST didn't land on /home — likely an intermediate Keycloak
                 # required-action page (e.g. a 2FA enrollment prompt) that this
                 # scraper doesn't know how to click through yet.
+                body = final_response.text
                 _LOGGER.error(
-                    "Login did not redirect to /home. Final URL: %s, Status: %s, Body snippet: %s",
-                    final_response.url, final_response.status_code, final_response.text[:2000],
+                    "Login did not redirect to /home. Final URL: %s, Status: %s, Body length: %s",
+                    final_response.url, final_response.status_code, len(body),
                 )
+                forms = re.findall(r'<form[^>]*action="([^"]+)"[^>]*>', body)
+                _LOGGER.error("Forms found on page: %s", [f.replace('&amp;', '&') for f in forms])
+                skip_candidates = re.findall(
+                    r'<(?:a|button|input)[^>]*(?:href|value)="([^"]*)"[^>]*>[^<]*(?:pomi|nie teraz|skip|cancel|later|anuluj|rezygn)',
+                    body, re.IGNORECASE,
+                )
+                _LOGGER.error("Possible skip/cancel links: %s", skip_candidates)
+                # Full body, chunked so nothing gets cut off by log line limits
+                for i in range(0, len(body), 1800):
+                    _LOGGER.error("Body[%05d]: %s", i, body[i:i + 1800])
         else:
             _LOGGER.error("Failed to find action URL in response page")
         return ""
