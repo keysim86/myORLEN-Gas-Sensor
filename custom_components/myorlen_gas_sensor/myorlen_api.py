@@ -133,6 +133,21 @@ class myORLENApi:
             }
             final_response = session.post(post_url, data=payload)
 
+            if "https://ebok.myorlen.pl/home" not in final_response.url:
+                # Keycloak may insert a "Do you want to enable 2FA?" prompt between
+                # login and the /home redirect. It offers a Skip button alongside
+                # Enable, distinguished only by the submitted field name
+                # (CANCEL_2FA vs ENABLE_2FA) — click Skip by POSTing that field.
+                # ORLEN has flagged this 2FA as becoming mandatory eventually;
+                # once it is, there will be no Skip button left to click.
+                skip_match = re.search(
+                    r'<form[^>]*action="([^"]+)"[^>]*>.*?name="CANCEL_2FA"',
+                    final_response.text, re.DOTALL,
+                )
+                if skip_match:
+                    skip_url = skip_match.group(1).replace('&amp;', '&')
+                    final_response = session.post(skip_url, data={"CANCEL_2FA": "Pomiń"})
+
             if "https://ebok.myorlen.pl/home" in final_response.url:
                 auth_token_url = f'https://ebok.myorlen.pl/auth/get-auth-token?deviceId={init_data["DeviceId"]}&api-version=3.0'
                 session.headers.update({'Referer': 'https://ebok.myorlen.pl/'})
