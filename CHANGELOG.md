@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.3-beta.3] - 2026-07-28
+
+### Fixed
+- `myorlen_api.py`: logowanie automatycznie pomija ekran Keycloak „Czy chcesz włączyć dwustopniowe logowanie?" (POST z polem `CANCEL_2FA`, tak jak kliknięcie „Pomiń" w przeglądarce) — usuwa błąd „Login failed: No token received" spowodowany tym nowym ekranem pośrednim.
+
+### Known issues
+- ORLEN zapowiada, że 2FA stanie się obowiązkowe — gdy przycisk „Pomiń" zniknie z tego ekranu, to obejście przestanie działać i integracja będzie wymagała innego mechanizmu logowania (np. kodu SMS).
+
 ## [1.6.3-beta.2] - 2026-07-28
 
 ### Debug
