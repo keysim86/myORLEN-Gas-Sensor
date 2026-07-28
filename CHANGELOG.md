@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.3-beta.1] - 2026-07-28
+
+### Debug
+- `myorlen_api.py`: logowanie zaczęło zwracać "Login failed: No token received" — ORLEN dodał nowy ekran pośredni w Keycloak (prawdopodobnie prompt o włączenie 2FA) między podaniem hasła a przekierowaniem na `/home`. Dodano diagnostyczne logowanie (URL, status i fragment treści odpowiedzi), gdy logowanie nie kończy się oczekiwanym przekierowaniem — pozwoli to dokładnie zidentyfikować ekran, na którym integracja się zatrzymuje, i przygotować właściwą poprawkę w kolejnej wersji.
+
 ## [1.6.2] - 2026-04-07
 
 ### Fixed
