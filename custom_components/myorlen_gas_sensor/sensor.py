@@ -1,8 +1,10 @@
 """Platform for sensor integration."""
 from __future__ import annotations
 
+import json
 import logging
 from datetime import timedelta
+from pathlib import Path
 from typing import Callable, Optional
 
 import homeassistant.helpers.config_validation as cv
@@ -20,6 +22,19 @@ from .myorlen_api import myORLENApi, AUTH_METHOD_ORLEN_ID
 from .ppg_reading_for_meter import MeterReading
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _read_integration_version() -> str:
+    """Czytaj wersję bezpośrednio z manifest.json, żeby karta urządzenia
+    zawsze pokazywała to, co faktycznie jest zainstalowane."""
+    manifest_path = Path(__file__).parent / "manifest.json"
+    try:
+        return json.loads(manifest_path.read_text()).get("version", "unknown")
+    except (OSError, json.JSONDecodeError):
+        return "unknown"
+
+
+INTEGRATION_VERSION = _read_integration_version()
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_USERNAME): cv.string,
     vol.Required(CONF_PASSWORD): cv.string,
@@ -118,6 +133,7 @@ class myORLENBaseSensor(SensorEntity):
             "name": f"myORLEN GAS METER ID {self.meter_id}",
             "manufacturer": "myORLEN",
             "model": self.meter_id,
+            "sw_version": INTEGRATION_VERSION,
             "via_device": None,
         }
 
