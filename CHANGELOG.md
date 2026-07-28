@@ -1,25 +1,15 @@
 # Changelog
 
-## [1.6.3-beta.3] - 2026-07-28
+## [1.6.3] - 2026-07-28
 
 ### Fixed
-- `myorlen_api.py`: logowanie automatycznie pomija ekran Keycloak „Czy chcesz włączyć dwustopniowe logowanie?" (POST z polem `CANCEL_2FA`, tak jak kliknięcie „Pomiń" w przeglądarce) — usuwa błąd „Login failed: No token received" spowodowany tym nowym ekranem pośrednim.
-
-### Known issues
-- ORLEN zapowiada, że 2FA stanie się obowiązkowe — gdy przycisk „Pomiń" zniknie z tego ekranu, to obejście przestanie działać i integracja będzie wymagała innego mechanizmu logowania (np. kodu SMS).
-
-## [1.6.3-beta.2] - 2026-07-28
-
-### Debug
-- `myorlen_api.py`: potwierdzono przyczynę — logowanie ląduje na ekranie Keycloak `execution=sms-2fa-manage` (wymuszenie 2FA) zamiast na `/home`. Diagnostyka rozszerzona: pełna treść strony logowana bez ucinania (poprzednio ucinana po 2000 znakach, przed właściwym formularzem), plus automatyczne wykrywanie `<form action=...>` i linków/przycisków pomiń/anuluj na tej stronie.
+- `myorlen_api.py`: logowanie zaczęło zwracać "Login failed: No token received" — ORLEN wstawił między podaniem hasła a przekierowaniem na `/home` nowy ekran Keycloak „Czy chcesz włączyć dwustopniowe logowanie?". Logowanie automatycznie pomija ten ekran (POST z polem `CANCEL_2FA`, tak jak kliknięcie „Pomiń" w przeglądarce).
 
 ### Added
 - Karta urządzenia w HA pokazuje teraz numer zainstalowanej wersji integracji (czytany z `manifest.json`, zawsze zgodny z rzeczywistością)
 
-## [1.6.3-beta.1] - 2026-07-28
-
-### Debug
-- `myorlen_api.py`: logowanie zaczęło zwracać "Login failed: No token received" — ORLEN dodał nowy ekran pośredni w Keycloak (prawdopodobnie prompt o włączenie 2FA) między podaniem hasła a przekierowaniem na `/home`. Dodano diagnostyczne logowanie (URL, status i fragment treści odpowiedzi), gdy logowanie nie kończy się oczekiwanym przekierowaniem — pozwoli to dokładnie zidentyfikować ekran, na którym integracja się zatrzymuje, i przygotować właściwą poprawkę w kolejnej wersji.
+### Known issues
+- ORLEN zapowiada, że 2FA stanie się obowiązkowe — gdy przycisk „Pomiń" zniknie z tego ekranu, to obejście przestanie działać i integracja będzie wymagała innego mechanizmu logowania (np. kodu SMS lub kodu TOTP z aplikacji)
 
 ## [1.6.2] - 2026-04-07
 
