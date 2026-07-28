@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.3-beta.2] - 2026-07-28
+
+### Debug
+- `myorlen_api.py`: potwierdzono przyczynę — logowanie ląduje na ekranie Keycloak `execution=sms-2fa-manage` (wymuszenie 2FA) zamiast na `/home`. Diagnostyka rozszerzona: pełna treść strony logowana bez ucinania (poprzednio ucinana po 2000 znakach, przed właściwym formularzem), plus automatyczne wykrywanie `<form action=...>` i linków/przycisków pomiń/anuluj na tej stronie.
+
+### Added
+- Karta urządzenia w HA pokazuje teraz numer zainstalowanej wersji integracji (czytany z `manifest.json`, zawsze zgodny z rzeczywistością)
+
 ## [1.6.3-beta.1] - 2026-07-28
 
 ### Debug
