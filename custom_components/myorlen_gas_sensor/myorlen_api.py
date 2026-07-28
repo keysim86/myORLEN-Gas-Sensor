@@ -139,6 +139,18 @@ class myORLENApi:
                 res_auth = session.get(auth_token_url)
                 if res_auth.status_code == 200:
                     return res_auth.json().get('Token')
+                _LOGGER.error(
+                    "Auth token request failed. Status: %s, Response: %s",
+                    res_auth.status_code, res_auth.text[:500],
+                )
+            else:
+                # Login POST didn't land on /home — likely an intermediate Keycloak
+                # required-action page (e.g. a 2FA enrollment prompt) that this
+                # scraper doesn't know how to click through yet.
+                _LOGGER.error(
+                    "Login did not redirect to /home. Final URL: %s, Status: %s, Body snippet: %s",
+                    final_response.url, final_response.status_code, final_response.text[:2000],
+                )
         else:
             _LOGGER.error("Failed to find action URL in response page")
         return ""
