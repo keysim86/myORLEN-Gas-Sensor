@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.4] - 2026-07-28
+
+### Note
+- Wyłącznie bump wersji, bez zmian w kodzie — 1.6.3 zawierał już wszystkie poprawki (zweryfikowany bajt po bajcie w opublikowanym ZIP-ie), ale HACS u części instalacji pokazywał wciąż lokalnie zainstalowaną wcześniej wersję beta. Nowy numer wymusza jednoznaczną, nowszą wersję do pobrania.
+
 ## [1.6.3] - 2026-07-28
 
 ### Fixed
