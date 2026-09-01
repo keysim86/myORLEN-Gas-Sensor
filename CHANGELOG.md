@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.6.5-beta.1] - 2026-09-01
 
 ### Fixed
 - **Logowanie przestało działać — ORLEN wymusił 2FA.** Ekran Keycloaka `required-action?execution=sms-2fa-manage` nie ma już przycisku „Pomiń" (`CANCEL_2FA`); zostało wyłącznie `ENABLE_2FA`. Dokładnie to, co 1.6.3 zapowiadał w „Known issues". Integracja rejestruje teraz konto w 2FA i prosi o kod SMS przez standardowe ponowne uwierzytelnienie Home Assistanta
