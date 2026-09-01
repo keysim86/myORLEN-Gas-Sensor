@@ -10,10 +10,23 @@
           "password": "Hasło",
           "auth_method": "Metoda logowania"
         }
+      },
+      "sms": {
+        "title": "Kod SMS z ORLEN ID",
+        "description": "ORLEN wymaga potwierdzenia logowania kodem SMS. Kod został wysłany na numer przypisany do konta {login} i jest ważny tylko kilka minut — jeśli wygaśnie, zamknij to okno i otwórz je ponownie, żeby zamówić nowy.",
+        "data": {
+          "sms_code": "Kod z SMS-a"
+        }
       }
     },
     "error": {
-      "verify_connection_failed": "Logowanie nie powiodło się!"
+      "verify_connection_failed": "Logowanie nie powiodło się!",
+      "sms_code_invalid": "Kod nie został przyjęty. Sprawdź go i spróbuj jeszcze raz.",
+      "sms_request_failed": "Nie udało się zamówić kodu SMS. Szczegóły w dzienniku Home Assistanta."
+    },
+    "abort": {
+      "reauth_successful": "Zalogowano. Sensory zostały odświeżone.",
+      "integration_not_loaded": "Integracja nie jest załadowana — uruchom ją i spróbuj ponownie."
     }
   },
   "selector": {

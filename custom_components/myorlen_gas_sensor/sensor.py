@@ -13,12 +13,14 @@ from homeassistant.components.sensor import SensorEntity, PLATFORM_SCHEMA, Senso
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, UnitOfVolume, UnitOfEnergy
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 
 from .invoices import InvoicesList
-from .myorlen_api import myORLENApi, AUTH_METHOD_ORLEN_ID
+from .myorlen_api import (myORLENApi, AUTH_METHOD_ORLEN_ID,
+                          SmsCodeRequired, LoginCooldown)
 from .ppg_reading_for_meter import MeterReading
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,7 +43,23 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional("auth_method", default=AUTH_METHOD_ORLEN_ID): cv.string,
 })
 SCAN_INTERVAL = timedelta(hours=8)
-RETRY_INTERVAL = 900  # 15 minut gdy sensor jest nieznany/unavailable
+
+# PONAWIANIE ROSNIE WYKLADNICZO, a nie co sztywne 15 minut.
+#
+# Stala 15 minut wygladala niewinnie, dopoki liczylo sie ja na jeden sensor.
+# Sensorow jest szesc i kazdy ponawial osobno, wiec przy zepsutym logowaniu
+# wychodzilo 24 uderzenia na godzine w bramke ORLEN-u. Zmierzone 2026-09-01
+# na wlasnym dzienniku: okolo 170 nieudanych logowan w ciagu dnia.
+#
+# Teraz odstep podwaja sie po kazdym niepowodzeniu: 15 min, 30, 60, 120...
+# do gornej granicy rownej normalnemu cyklowi. Awaria trwajaca dobe kosztuje
+# kilkanascie prob zamiast kilkuset. Licznik zeruje sie po pierwszym udanym
+# odczycie, wiec pojedyncza czkawka sieci nic nie spowalnia na dluzej.
+#
+# Drugi bezpiecznik siedzi w myorlen_api i dziala niezaleznie: nawet gdyby
+# wszystkie szesc sensorow obudzilo sie naraz, logowanie poleci raz.
+RETRY_INTERVAL = 900            # pierwsze ponowienie: 15 minut
+RETRY_INTERVAL_MAX = 8 * 3600   # dalej nie warto -- to juz normalny cykl
 
 
 async def async_setup_entry(
@@ -49,12 +67,23 @@ async def async_setup_entry(
         config_entry: ConfigEntry,
         async_add_entities,
 ):
-    user = config_entry.data[CONF_USERNAME]
-    password = config_entry.data[CONF_PASSWORD]
-    auth_method = config_entry.data.get("auth_method", AUTH_METHOD_ORLEN_ID)
-    api = myORLENApi(user, password, auth_method)
+    # API tworzy __init__.py -- jedno na wpis konfiguracji, wspolne dla
+    # wszystkich sensorow. Wlasny obiekt tutaj rozbilby bezpiecznik logowania
+    # na szesc niezaleznych licznikow, czyli dokladnie to, co naprawiamy.
+    api = hass.data.get("myorlen_gas_sensor", {}).get(config_entry.entry_id)
+    if api is None:
+        api = myORLENApi(
+            config_entry.data[CONF_USERNAME],
+            config_entry.data[CONF_PASSWORD],
+            config_entry.data.get("auth_method", AUTH_METHOD_ORLEN_ID),
+        )
     try:
         pgps = await hass.async_add_executor_job(api.meterList)
+    except (SmsCodeRequired, LoginCooldown) as e:
+        # To nie jest zepsuta konfiguracja, tylko czekanie -- na kod od czlowieka
+        # albo na koniec przerwy po bledzie. ConfigEntryNotReady mowi HA
+        # "sprobuj pozniej" zamiast wywalac integracje; prosba o kod juz wisi.
+        raise ConfigEntryNotReady(str(e)) from e
     except Exception as e:
         _LOGGER.error("Failed to initialize myORLEN sensor: %s", e)
         raise ValueError
@@ -104,6 +133,7 @@ class myORLENBaseSensor(SensorEntity):
         self.tariff = tariff
         self.contract_number = contract_number
         self._unsub_retry = None
+        self._retry_attempts = 0
 
     def _schedule_retry(self):
         if self._unsub_retry:
@@ -116,12 +146,34 @@ class myORLENBaseSensor(SensorEntity):
                 self.async_schedule_update_ha_state(force_refresh=True)
             )
 
-        self._unsub_retry = async_call_later(self.hass, RETRY_INTERVAL, _do_retry)
+        self._retry_attempts += 1
+        opoznienie = min(RETRY_INTERVAL * (2 ** (self._retry_attempts - 1)),
+                         RETRY_INTERVAL_MAX)
+        # Gdy logowanie odsiaduje przerwe karna, budzenie sie wczesniej nie ma
+        # sensu: skonczy sie wyjatkiem bez ani jednego zapytania do ORLEN-u.
+        opoznienie = max(opoznienie, self.api.seconds_until_login_allowed())
+        self._unsub_retry = async_call_later(self.hass, opoznienie, _do_retry)
 
     def _cancel_retry(self):
+        self._retry_attempts = 0
         if self._unsub_retry:
             self._unsub_retry()
             self._unsub_retry = None
+
+    def _po_bledzie(self, e):
+        """Jedno miejsce na obsluge bledu odswiezania.
+
+        Czekanie na kod SMS i przerwa po nieudanym logowaniu NIE SA awariami
+        i nie zasluguja na ostrzezenie w dzienniku przy kazdym sensorze --
+        przy szesciu sensorach byloby to szesc krzykow o tym samym."""
+        if isinstance(e, SmsCodeRequired):
+            _LOGGER.debug("%s: czekam na kod SMS", self.entity_name)
+        elif isinstance(e, LoginCooldown):
+            _LOGGER.debug("%s: %s", self.entity_name, e)
+        else:
+            _LOGGER.warning("%s: odswiezanie nieudane, zostawiam poprzedni stan: %s",
+                            self.entity_name, e)
+        self._schedule_retry()
 
     async def async_will_remove_from_hass(self):
         self._cancel_retry()
@@ -185,8 +237,7 @@ class myORLENSensor(myORLENBaseSensor):
             else:
                 self._cancel_retry()
         except Exception as e:
-            _LOGGER.warning("myORLEN gas sensor update failed, keeping last state: %s", e)
-            self._schedule_retry()
+            self._po_bledzie(e)
 
     def latestMeterReading(self):
         readings = self.api.readingForMeter(self.meter_id).meter_readings
@@ -238,8 +289,7 @@ class myORLENInvoiceSensor(myORLENBaseSensor):
             else:
                 self._cancel_retry()
         except Exception as e:
-            _LOGGER.warning("myORLEN invoice sensor update failed, keeping last state: %s", e)
-            self._schedule_retry()
+            self._po_bledzie(e)
 
     def invoices_summary(self):
         id_local = self.id_local
@@ -312,8 +362,7 @@ class myORLENCostTrackingSensor(myORLENBaseSensor):
             else:
                 self._cancel_retry()
         except Exception as e:
-            _LOGGER.warning("myORLEN cost tracking sensor update failed, keeping last state: %s", e)
-            self._schedule_retry()
+            self._po_bledzie(e)
 
     def latest_price(self):
         id_local = self.id_local
@@ -391,8 +440,7 @@ class myORLENLastInvoiceWearM3Sensor(myORLENBaseSensor):
             else:
                 self._cancel_retry()
         except Exception as e:
-            _LOGGER.warning("myORLEN sensor update failed, keeping last state: %s", e)
-            self._schedule_retry()
+            self._po_bledzie(e)
 
 
 class myORLENLastInvoiceWearKWhSensor(myORLENBaseSensor):
@@ -440,8 +488,7 @@ class myORLENLastInvoiceWearKWhSensor(myORLENBaseSensor):
             else:
                 self._cancel_retry()
         except Exception as e:
-            _LOGGER.warning("myORLEN sensor update failed, keeping last state: %s", e)
-            self._schedule_retry()
+            self._po_bledzie(e)
 
 
 class myORLENConversionFactorSensor(myORLENBaseSensor):
@@ -491,5 +538,4 @@ class myORLENConversionFactorSensor(myORLENBaseSensor):
             else:
                 self._cancel_retry()
         except Exception as e:
-            _LOGGER.warning("myORLEN sensor update failed, keeping last state: %s", e)
-            self._schedule_retry()
+            self._po_bledzie(e)

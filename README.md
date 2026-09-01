@@ -54,11 +54,27 @@ W kreatorze podaj login i hasło do konta myORLEN oraz wybierz metodę uwierzyte
 Logowanie przez SSO ORLEN ID — zalecane dla kont utworzonych lub zmigrowanych do ORLEN ID.
 
 **eBOK Login**
-Bezpośrednie logowanie przez klasyczny endpoint eBOK (`/auth/login`). Użyj tej metody jeśli Twoje konto pochodzi z portalu PGNiG/eBOK i nie zostało zmigrowane do ORLEN ID.
+Bezpośrednie logowanie przez klasyczny endpoint eBOK (`/auth/login`). Użyj tej metody jeśli Twoje konto pochodzi z portalu PGNiG/eBOK i nie zostało zmigrowane do ORLEN ID. Ta metoda **nie wymaga kodu SMS**.
+
+### Dwustopniowe logowanie (ORLEN ID)
+
+Od **1 września 2026** ORLEN wymaga potwierdzenia logowania kodem SMS i nie da się tego pominąć — ekran, który wcześniej miał przycisk „Pomiń", ma teraz wyłącznie „Włącz".
+
+Jak to działa w integracji:
+
+1. Przy pierwszym logowaniu integracja rejestruje konto w 2FA i zamawia kod SMS.
+2. Home Assistant pokazuje powiadomienie **„Wymagane ponowne uwierzytelnienie"**. Otwórz je i wpisz kod z SMS-a — kod jest ważny kilka minut.
+3. Po zalogowaniu integracja **zapamiętuje ciasteczka sesji** i zapisuje je we wpisie konfiguracji. Dopóki ORLEN uznaje tę sesję, kolejne logowania — również po restarcie Home Assistanta — idą bez SMS-a.
+
+Kodu SMS nie da się obejść automatycznie: kod przychodzi na telefon i nie ma go skąd odczytać. Jeśli ORLEN unieważni sesję, integracja poprosi o kolejny kod tym samym powiadomieniem.
 
 ## Częstotliwość odświeżania
 
-Dane są pobierane co **8 godzin** oraz przy starcie. Jeśli sensor zwróci stan niedostępny lub nieznany, integracja automatycznie ponawia próbę po **15 minutach**.
+Dane są pobierane co **8 godzin** oraz przy starcie.
+
+Gdy odświeżanie się nie powiedzie, kolejne próby są coraz rzadsze: **15 minut, 30, 60, 120…** aż do 8 godzin. Licznik zeruje się po pierwszym udanym odczycie, więc chwilowa czkawka sieci nic nie spowalnia na dłużej.
+
+Niezależnie od tego **logowanie ma własny bezpiecznik**: po nieudanej próbie żaden sensor nie wywoła kolejnej przed końcem przerwy. Wcześniej każdy z sześciu sensorów ponawiał niezależnie co 15 minut, co przy zepsutym logowaniu dawało **24 nieudane logowania na godzinę** — a tak właśnie blokuje się konta.
 
 ## Uwaga prawna
 

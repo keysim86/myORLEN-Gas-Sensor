@@ -10,10 +10,23 @@
           "password": "Password",
           "auth_method": "Login method"
         }
+      },
+      "sms": {
+        "title": "SMS code from ORLEN ID",
+        "description": "ORLEN now requires an SMS code to confirm the login. The code was sent to the number linked to account {login} and is valid for a few minutes only — if it expires, close this dialog and open it again to request a new one.",
+        "data": {
+          "sms_code": "SMS code"
+        }
       }
     },
     "error": {
-      "verify_connection_failed": "Login failed!"
+      "verify_connection_failed": "Login failed!",
+      "sms_code_invalid": "The code was not accepted. Check it and try again.",
+      "sms_request_failed": "Could not request an SMS code. See the Home Assistant log for details."
+    },
+    "abort": {
+      "reauth_successful": "Signed in. Sensors have been refreshed.",
+      "integration_not_loaded": "The integration is not loaded — start it and try again."
     }
   },
   "selector": {

@@ -18,7 +18,7 @@ from custom_components.myorlen_gas_sensor.invoices import Invoices, InvoicesList
 async def test_newer_takes_precedence(hass: HomeAssistant):
     """myORLEN sensor test - test_newer_takes_precedence."""
     # given
-    myorlen_api = MagicMock()
+    myorlen_api = any_api()
     reading_newer = any_meter_reading()
     reading_newer.reading_date_utc = datetime(2022, 7, 5)
     reading_newer.value = 2
@@ -41,7 +41,7 @@ async def test_newer_takes_precedence(hass: HomeAssistant):
 @pytest.mark.asyncio
 async def test_multiple_invocies(hass: HomeAssistant):
     """myORLEN sensor test - test_multiple_invocies."""
-    myorlen_api = MagicMock()
+    myorlen_api = any_api()
     myorlen_api.invoices = MagicMock(return_value=(Invoices(invoices_list=[any_invoice(), any_invoice()],
                                                           code=0, message=None,
                                                           display_to_end_user=None,
@@ -58,7 +58,7 @@ async def test_multiple_invocies(hass: HomeAssistant):
 @pytest.mark.asyncio
 async def test_a_price(hass: HomeAssistant):
     """myORLEN sensor test - test_multiple_invocies."""
-    myorlen_api = MagicMock()
+    myorlen_api = any_api()
     invoice = any_invoice()
     invoice.gross_amount = 10
     invoice.wear_m3 = 1
@@ -77,7 +77,7 @@ async def test_a_price(hass: HomeAssistant):
 @pytest.mark.asyncio
 async def test_latest_price(hass: HomeAssistant):
     """myORLEN sensor test - test_latest_price."""
-    myorlen_api = MagicMock()
+    myorlen_api = any_api()
     old_invoice = any_invoice()
     old_invoice.date = datetime(2022, 7, 15)
     old_invoice.gross_amount = 1
@@ -102,7 +102,7 @@ async def test_latest_price(hass: HomeAssistant):
 @pytest.mark.asyncio
 async def test_non_zero_latest_price(hass: HomeAssistant):
     """myORLEN sensor test - test_multiple_invocies."""
-    myorlen_api = MagicMock()
+    myorlen_api = any_api()
     zero_invoice = any_invoice()
     zero_invoice.date = datetime(2022, 9, 15)
     zero_invoice.gross_amount = 1
@@ -134,7 +134,7 @@ async def test_non_zero_latest_price(hass: HomeAssistant):
 @pytest.mark.asyncio
 async def test_gross_amount_is_none(hass: HomeAssistant):
     """myORLEN sensor test - test_multiple_invocies."""
-    myorlen_api = MagicMock()
+    myorlen_api = any_api()
     invoice = any_invoice()
     invoice.gross_amount = None
     invoice.wear_m3 = 1
@@ -154,7 +154,7 @@ async def test_gross_amount_is_none(hass: HomeAssistant):
 @pytest.mark.asyncio
 async def test_wear_is_none(hass: HomeAssistant):
     """myORLEN sensor test - test when gas consumption is zero (no valid consumption)."""
-    myorlen_api = MagicMock()
+    myorlen_api = any_api()
     invoice = any_invoice()
     invoice.gross_amount = 1
     invoice.wear_m3 = 0
@@ -171,6 +171,17 @@ async def test_wear_is_none(hass: HomeAssistant):
     # then
     assert sensor.state is None
 
+
+def any_api() -> MagicMock:
+    """Atrapa API z ustawionym bezpiecznikiem logowania.
+
+    Od 2026-09-01 sensory pytaja API, ile zostalo do konca przerwy po
+    nieudanym logowaniu, zeby nie budzic sie wczesniej. Goly MagicMock
+    zwraca wtedy obiekt, ktorego nie da sie porownac z liczba, i test
+    wywala sie na max() zamiast na tym, co faktycznie sprawdza."""
+    api = MagicMock()
+    api.seconds_until_login_allowed = MagicMock(return_value=0)
+    return api
 
 def any_invoice() -> InvoicesList:
     return InvoicesList(number="a",
