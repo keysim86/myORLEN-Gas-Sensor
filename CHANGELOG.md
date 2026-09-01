@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.6.5-beta.1] - 2026-09-01
+## [1.6.5] - 2026-09-01
 
 ### Fixed
 - **Logowanie przestało działać — ORLEN wymusił 2FA.** Ekran Keycloaka `required-action?execution=sms-2fa-manage` nie ma już przycisku „Pomiń" (`CANCEL_2FA`); zostało wyłącznie `ENABLE_2FA`. Dokładnie to, co 1.6.3 zapowiadał w „Known issues". Integracja rejestruje teraz konto w 2FA i prosi o kod SMS przez standardowe ponowne uwierzytelnienie Home Assistanta
@@ -11,6 +11,9 @@
 - Krok konfiguracji **„Kod SMS z ORLEN ID"** — pojawia się jako powiadomienie „Wymagane ponowne uwierzytelnienie", gdy ORLEN poprosi o kod
 - **Zapamiętywanie sesji.** Ciasteczka po udanym logowaniu trafiają do wpisu konfiguracji, więc jeśli Keycloak uzna urządzenie za zaufane, kolejne logowania — także po restarcie HA — idą bez SMS-a
 - Testy bezpiecznika logowania i rozpoznawania ekranów Keycloaka (`tests/test_login_backoff.py`), działające bez środowiska Home Assistanta
+
+### Verified
+- Pierwsze logowanie z kodem SMS przeszło na żywym koncie (2026-09-01): wszystkie sześć sensorów wróciło z danymi, a integracja zapisała **13 ciasteczek sesji** Keycloaka (`AUTH_SESSION_ID`, `KC_AUTH_SESSION_HASH`, `KC_RESTART`) do wpisu konfiguracji. Czy ORLEN uzna to za zaufane urządzenie i pozwoli pominąć SMS przy kolejnym logowaniu — okaże się przy najbliższym restarcie HA
 
 ### Known issues
 - Ekran z polem na kod nie został jeszcze zobaczony na żywo — pole rozpoznajemy po tym, że jest **widoczne** (a nie po nazwie), bo nazwy różnią się między wersjami Keycloaka. Gdyby ORLEN zbudował ten ekran nietypowo, w dzienniku wyląduje zrzut całej strony i poprawka będzie kwestią jednej linii
