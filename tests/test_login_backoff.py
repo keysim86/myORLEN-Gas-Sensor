@@ -125,3 +125,48 @@ def test_reset_backoff_odblokowuje_na_zyczenie_czlowieka():
     assert api.seconds_until_login_allowed() > 0
     api.reset_backoff()
     assert api.seconds_until_login_allowed() == 0
+
+
+def test_zestarzale_ciasteczka_nie_blokuja_logowania():
+    """Zapisana sesja to optymalizacja, nie warunek.
+
+    Zestarzale ciasteczka Keycloaka potrafia wpedzic logowanie w petle
+    przekierowan; wtedy trzeba je wyrzucic i sprobowac od zera, a nie
+    polec. 2026-09-03 wlasnie to zatrzymalo cala integracje."""
+    api = _api()
+    api._session = object()          # udajemy zapisana sesje
+    wyczyszczone = []
+    api._on_session_saved = wyczyszczone.append
+    proby = []
+
+    def _oid(sesja):
+        proby.append(sesja)
+        if sesja is not None:
+            raise Exception("Exceeded 30 redirects")
+        return "token-po-czystym-logowaniu"
+
+    api._login_oid = _oid
+    assert api.login() == "token-po-czystym-logowaniu"
+    assert len(proby) == 2                   # najpierw z sesja, potem bez
+    assert proby[1] is None
+    assert wyczyszczone == [{}]              # ciasteczka skasowane we wpisie
+    assert api._session is None
+
+
+def test_bez_zapisanej_sesji_blad_leci_dalej():
+    """Bez ciasteczek nie ma czego czyscic -- drugiej proby byc nie moze,
+    inaczej kazde nieudane logowanie szlo by do ORLEN-u podwojnie."""
+    api = _api()
+    api._session = None
+    proby = []
+
+    def _oid(sesja):
+        proby.append(sesja)
+        raise Exception("cokolwiek")
+
+    api._login_oid = _oid
+    try:
+        api.login()
+    except Exception:
+        pass
+    assert len(proby) == 1

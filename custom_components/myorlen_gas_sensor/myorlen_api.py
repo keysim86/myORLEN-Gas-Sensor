@@ -218,11 +218,39 @@ class myORLENApi:
             _LOGGER.error("eBOK Login failed. Status: %s, Response: %s", response.status_code, response.text)
             return ""
 
+        # CIASTECZKA SA OPTYMALIZACJA, NIE WARUNKIEM LOGOWANIA.
+        #
+        # Zapisana sesja pozwala pominac kod SMS, ale zestarzale ciasteczka
+        # Keycloaka potrafia wpedzic logowanie w PETLE PRZEKIEROWAN --
+        # "TooManyRedirects: Exceeded 30 redirects" zamiast czytelnego bledu.
+        # Zdarzylo sie 2026-09-03 zaraz po aktualizacji HA: integracja nie
+        # wstala wcale, zero encji. Dlatego przy KAZDYM niepowodzeniu z uzyta
+        # sesja czyscimy ciasteczka i probujemy raz jeszcze od zera.
+        try:
+            return self._login_oid(self._session)
+        except SmsCodeRequired:
+            raise
+        except Exception as e:
+            if self._session is None:
+                raise
+            _LOGGER.warning(
+                "Logowanie z zapisana sesja nie powiodlo sie (%s). Czyszcze "
+                "ciasteczka i probuje od nowa -- tym razem moze byc potrzebny "
+                "kod SMS.", type(e).__name__)
+            self._session = None
+            if self._on_session_saved:
+                try:
+                    self._on_session_saved({})
+                except Exception:
+                    pass
+            return self._login_oid(None)
+
+    def _login_oid(self, sesja) -> str:
         init_url = 'https://ebok.myorlen.pl/auth/oid/init-login?api-version=3.0'
 
         # Sesja z poprzedniego udanego logowania, jesli jakas jest. To ona
         # niesie ewentualne ciasteczko zaufanego urzadzenia od Keycloaka.
-        session = self._session or self._new_session()
+        session = sesja or self._new_session()
         init_data = {
             "DeviceId": OID_DEVICE_ID,
             "DeviceType": "Web",

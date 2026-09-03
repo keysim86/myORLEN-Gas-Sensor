@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.7] - 2026-09-03
+
+### Fixed
+- **Zestarzałe ciasteczka blokowały logowanie na amen.** Zapisana sesja Keycloaka miała pozwalać pomijać kod SMS po restarcie, ale gdy się przeterminowała, logowanie wpadało w pętlę przekierowań (`TooManyRedirects: Exceeded 30 redirects`) i integracja nie wstawała wcale — zero encji, dokładnie jak przy `via_device` w 1.6.6. Ciasteczka są teraz traktowane jak to, czym miały być: **optymalizacja, nie warunek**. Nieudane logowanie z zapisaną sesją kasuje ciasteczka (także we wpisie konfiguracji) i ponawia próbę od zera. Bez zapisanej sesji zachowanie bez zmian — druga próba się nie odbywa, żeby nie pukać do ORLEN-u podwójnie
+
+### Added
+- Dwa testy pilnujące tego zachowania: powrót po zestarzałych ciasteczkach i brak podwójnej próby, gdy ciasteczek nie było
+
 ## [1.6.6] - 2026-09-03
 
 ### Fixed
