@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.6] - 2026-09-03
+
+### Fixed
+- **Integracja nie wstawała na Home Assistant 2026.9** — zero encji, wszystkie sensory znikały. `device_info` przekazywało klucz `via_device: None`, a od 2026.9 sama jego obecność kończy się `RuntimeError: ... calls device_registry.async_get_or_create with a deprecated via_device parameter`. Klucz usunięty, bo od początku niczego nie wnosił: licznik gazu nie wisi pod żadnym urządzeniem nadrzędnym
+
 ## [1.6.5] - 2026-09-01
 
 ### Fixed

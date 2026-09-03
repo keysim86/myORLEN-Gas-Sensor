@@ -186,7 +186,18 @@ class myORLENBaseSensor(SensorEntity):
             "manufacturer": "myORLEN",
             "model": self.meter_id,
             "sw_version": INTEGRATION_VERSION,
-            "via_device": None,
+            # "via_device" USUNIETE 2026-09-03. Od HA 2026.9 przekazanie tego
+            # klucza do device_registry konczy sie RuntimeError -- nawet gdy
+            # wartoscia jest None, bo liczy sie sama obecnosc klucza:
+            #
+            #   RuntimeError: Detected code that calls
+            #   `device_registry.async_get_or_create` with a deprecated
+            #   `via_device` parameter; use `via_device_id` instead.
+            #
+            # Skutek byl calkowity: integracja nie wstawala wcale, zero encji.
+            # Nie zastepujemy go przez "via_device_id" -- licznik gazu nie wisi
+            # pod zadnym urzadzeniem nadrzednym, wiec ten klucz od poczatku
+            # niczego nie wnosil.
         }
 
     @property
